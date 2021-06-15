@@ -74,8 +74,8 @@ with hep.open(infile) as f:
         particlemom = particle.momentum
         stau_eta.append( particlemom.eta() )
         stau_phi.append( particlemom.phi() )
-        stau_pt .append( particlemom.pt() )
-        stau_m  .append( particlemom.m() )
+        stau_pt .append( particlemom.pt()/1000. )
+        stau_m  .append( particlemom.m()/1000. )
         mag = ( particlemom.px**2 + particlemom.py**2 + particlemom.pz**2 )**0.5
         stau_betagamma.append( mag  / particlemom.m() )
     
@@ -99,7 +99,7 @@ with hep.open(infile) as f:
           # http://hepmc.web.cern.ch/hepmc/classHepMC3_1_1FourVector.html
           if doTest : print("Decay location is: x",fourvec.x,", y",fourvec.y,", z",fourvec.z,", t",fourvec.t)
           stau_lxy       .append( fourvec.perp() )
-          stau_decaytime .append( fourvec.t )
+          stau_decaytime .append( fourvec.t ) # need to check this
     
 
         # Otherwise, this particle isn't decaying
