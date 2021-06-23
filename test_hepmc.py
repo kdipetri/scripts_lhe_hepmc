@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import pyhepmc_ng as hep
+from util.get_iso import *
+from util.get_timing import *
 import os
 import json
 import argparse
@@ -39,6 +41,9 @@ stau_m = []
 stau_lxy = []
 stau_betagamma = []
 stau_decaytime = []
+stau_isolation = []
+
+staus = [ 2000015, 1000015]
 
 # Reads the file
 with hep.open(infile) as f:
@@ -50,16 +55,16 @@ with hep.open(infile) as f:
     # If it doesn't work, we're at the end of the file. 
     # Just stop.
     if not evt : break
-
+    
     # Stop if this is just a test
     if doTest and evt.event_number > 10 :
       break
     if nevents > 0 and evt.event_number > nevents : break
-    if evt.event_number % 1000 == 0 : print("Event",evt.event_number)
-
+    if evt.event_number % (nevents/10) == 0 : print("Event",evt.event_number)
+    
     # From here on, do things with the event!
     if doTest: print("In event",evt.event_number)
- 
+    
     # Get particles with evt.particles
     # Get vertices with evt.vertices
     # Various classes link the two together
@@ -67,7 +72,7 @@ with hep.open(infile) as f:
     for particle in evt.particles :
     # This is what's in the "particle" class: http://hepmc.web.cern.ch/hepmc/classHepMC3_1_1GenParticle.html
       #print(particle.id," ",particle.pid)
-      if abs(particle.pid)==2000015 and particle.status==62 :
+      if abs(particle.pid) in staus and particle.status==62 :
         if doTest : print("This is a stau particle")
 
         # Get the particle four vector
@@ -99,7 +104,10 @@ with hep.open(infile) as f:
           # http://hepmc.web.cern.ch/hepmc/classHepMC3_1_1FourVector.html
           if doTest : print("Decay location is: x",fourvec.x,", y",fourvec.y,", z",fourvec.z,", t",fourvec.t)
           stau_lxy       .append( fourvec.perp() )
-          stau_decaytime .append( fourvec.t ) # need to check this
+          stau_decaytime .append( decayTime(particle) ) # need to check this
+    
+          # get isolation 
+          stau_isolation .append( get_iso( particle, evt.particles ))
     
 
         # Otherwise, this particle isn't decaying
@@ -115,6 +123,7 @@ data = {
  "stau_lxy" : stau_lxy,
  "stau_betagamma" : stau_betagamma,
  "stau_decaytime" : stau_decaytime,
+ "stau_isolation" : stau_isolation,
 }
 
 with open('output/stau_{}_{}.json'.format(mass,lifetime), 'w') as fp:
