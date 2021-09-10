@@ -53,7 +53,9 @@ def getHit(stau, particle, r_=1150, z_=3000, smearOpt="tHit50;tBS200;zBS50" ) :
     
     # step0 parse options
     (sig_tHit,sig_tBS,sig_zBS) = getSmearVals(smearOpt)
-    s="" if smearOpt=="tHit50;tBS200;zBS50" else "_"+smearOpt
+    # remove default opt
+    #s="" if smearOpt=="tHit50;tBS200;zBS50" else "_"+smearOpt
+    s="_"+smearOpt
 
     # step 1 find Z0, t0 from beamspot spread
     z0=random.gauss(0.0, sig_zBS) # default sigma 50 mm

@@ -41,21 +41,20 @@ minZTime = 3000
 minPt = [2,10,100] 
 minNtracks = 1
 
-# For efficiency studies?
 
+# Stage 1: Decay in geometric acceptance
 tracker_configs=[]
-# vary Lxy
+# vary Lxy (N layers)
 tracker_configs.append("lxy600;z3000;eta2.5")
 tracker_configs.append("lxy800;z3000;eta2.5")
 tracker_configs.append("lxy1000;z3000;eta2.5")
 tracker_configs.append("lxy1200;z3000;eta2.5")
 # vary eta
-tracker_configs.append("lxy1000;z3000;eta1.0")
-tracker_configs.append("lxy1000;z3000;eta2.5")
-tracker_configs.append("lxy1000;z3000;eta4.0")
+tracker_configs.append("lxy1200;z3000;eta1.0")
+tracker_configs.append("lxy1200;z3000;eta2.5")
+tracker_configs.append("lxy1200;z3000;eta4.0")
 
-#tResBS = 0.2 # 200 ps
-#tRes = [1,30,50,100]
+# Stage 2: Track Selection
 timing_configs=[]
 timing_configs.append("tHit0;tBS0;zBS0") # truth  
 timing_configs.append("tHit50;tBS0;zBS0") # hit res only 
@@ -63,6 +62,18 @@ timing_configs.append("tHit0;tBS200;zBS0") # beamspot only
 timing_configs.append("tHit0;tBS0;zBS50") # z0 only  
 timing_configs.append("tHit50;tBS200;zBS0") # hit + beamspot res  
 timing_configs.append("tHit50;tBS200;zBS50") # all
+
+# vary time delay (ns) 
+track_sels=[]
+track_sels.append("pt10;delay0.5")
+track_sels.append("pt10;delay1.0")
+track_sels.append("pt10;delay2.0")
+# vary pt
+track_sels.append("pt10;delayNone")
+track_sels.append("pt50;delayNone")
+track_sels.append("pt100;delayNone")
+# vary mass? needs pt smearing
+
 
 # For picking out the staus
 pids     = [2000015, 1000015]
@@ -157,29 +168,35 @@ with hep.open(infile) as f:
        # Stage One Selection 
        # Is the stau in acceptance (decaying past the tracker)
        for tracker_config in tracker_configs: 
-            stau = passTrackTrigger(stau,cutOpt=tracker_config)
+            stau = passStageOne(stau,cutOpt=tracker_config)
 
             pass_sel = "pass_StageOne_"+tracker_config
             nstau = "nStau_"+pass_sel
             if pass_sel in event : event[nstau] += stau[pass_sel] # key exists  
             else : event[nstau] = stau[pass_sel]
 
-       # Stage Two Selection
-       # Stau pT 
-
-
-       # Stage Three Selection 
+       # Stage Two Selection: stau pT and/or delay 
        # Use timing layer hit
        # returns hit times in ns, takes in resolutions in ps
        for timing_config in timing_configs: 
             stau = getHit(stau,particle,smearOpt=timing_config) 
+
+            for track_sel in track_sels: 
+                stau = passStageTwo(stau,cutOpt=track_sel,smearOpt=timing_config) 
+
+                pass_sel = "pass_StageTwo_"+track_sel+"_"+timing_config
+                nstau = "nStau_"+pass_sel
+                if pass_sel in event : event[nstau] += stau[pass_sel] # key exists  
+                else : event[nstau] = stau[pass_sel]
+
+
 
 
        staus.append(stau)
        # end stau loop
     
     # 
-    # compute if event is passing trigger 
+    # compute if event has at least one stau passing trigger 
     #
 
     # stage 1
@@ -187,6 +204,13 @@ with hep.open(infile) as f:
         pass_sel = "pass_StageOne_"+tracker_config
         nstau = "nStau_"+pass_sel
         event[pass_sel] =  event[nstau] >= 1
+
+    # stage 2
+    for timing_config in timing_configs: 
+       for track_sel in track_sels: 
+            pass_sel = "pass_StageTwo_"+track_sel+"_"+timing_config
+            nstau = "nStau_"+pass_sel
+            event[pass_sel] =  event[nstau] >= 1
 
     events.append(event)
     # end event loop

@@ -68,25 +68,29 @@ def eff_array_Lxy(sample="500_1ns",lxys=[600, 800, 1000, 1200], eta=2.5, z=3000)
 def compare_eff_lxy(samples=["500_0p01ns","500_0p1ns","500_1ns","500_10ns"]):
     # compares efficiencies for different masses or lifetimes
     lxys=[600, 800, 1000, 1200]
+
+    # lxy x-axis
     eff_arrays = []
     for sample in samples:
         eff_arrays.append( eff_array_Lxy(sample,lxys) ) 
 
     compare_effs(eff_arrays, lxys, samples,"plots/effs/eff_lxy_test.pdf")
 
+    # lifetime x-axis
+    # masses x-axis
+
     
-
-    #arrays = []
-    #labels = []
-    #for lifetime in lifetimes:
-    #    arrays.append(get_array(mass,lifetime,dist))
-    #    labels.append("M={} GeV, {}".format(mass,lifetime))
-    #    print(lifetime)
-
-    #outfile="plots/compareLifetime_{}_{}.pdf".format(lifetime,dist)
-    #compare1D(arrays,labels,outfile)
-    #return
-
 # Compare efficiencies  
-#graphEffLxy()
-compare_eff_lxy()
+
+
+# Stage 1 efficiency versus different Lxy Cuts (n layer)
+compare_eff_lxy() 
+
+# Stage 1 efficiency versus different eta cuts
+
+
+# Stage 2 efficiency for different pT cuts
+
+# Stage 2 efficiency for different delays
+
+# Stage 2 delay for different methods?

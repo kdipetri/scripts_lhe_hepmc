@@ -109,7 +109,7 @@ def compareTimeRes(dist,mass="600",lifetime = "1ns"):
     methods.append("_tHit0;tBS200;zBS0") # beamspot only  
     methods.append("_tHit0;tBS0;zBS50") # z0 only  
     methods.append("_tHit50;tBS200;zBS0") # hit + beamspot res  
-    methods.append("") # all
+    methods.append("_tHit50;tBS200;zBS50") # all
 
     labels = []
     labels.append("truth")
@@ -146,9 +146,12 @@ compareLifetime("lxy")
 #compareMass("betagamma") 
 #compareMass("decaytime") 
 #compareMass("isolation")
-#compareMass("hit_time")
-compareMass("hit_delay")
-#compareMass("hit_beta")
-#compareMass("hit_betaRes")
-#compareMass("hit_mass")
-#compareMass("hit_massRes")
+
+#
+s="_tHit50;tBS200;zBS50" 
+#compareMass("hit_time"+s)
+compareMass("hit_delay"+s)
+#compareMass("hit_beta"+s)
+#compareMass("hit_betaRes"+s)
+#compareMass("hit_mass"+s)
+#compareMass("hit_massRes"+s)
