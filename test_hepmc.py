@@ -70,6 +70,7 @@ track_sels.append("pt10;delay1.0")
 track_sels.append("pt10;delay2.0")
 # vary pt
 track_sels.append("pt10;delayNone")
+track_sels.append("pt20;delayNone")
 track_sels.append("pt50;delayNone")
 track_sels.append("pt100;delayNone")
 # vary mass? needs pt smearing
@@ -178,16 +179,19 @@ with hep.open(infile) as f:
        # Stage Two Selection: stau pT and/or delay 
        # Use timing layer hit
        # returns hit times in ns, takes in resolutions in ps
+       pass_sel1 = "pass_StageOne_lxy1200;z3000;eta2.5" # need to make sure we hit the timing layer
+
        for timing_config in timing_configs: 
             stau = getHit(stau,particle,smearOpt=timing_config) 
 
             for track_sel in track_sels: 
                 stau = passStageTwo(stau,cutOpt=track_sel,smearOpt=timing_config) 
 
-                pass_sel = "pass_StageTwo_"+track_sel+"_"+timing_config
-                nstau = "nStau_"+pass_sel
-                if pass_sel in event : event[nstau] += stau[pass_sel] # key exists  
-                else : event[nstau] = stau[pass_sel]
+                pass_sel2 = "pass_StageTwo_"+track_sel+"_"+timing_config
+                nstau = "nStau_"+pass_sel2
+                #print(stau[pass_sel1], stau[pass_sel2], stau[pass_sel1]*stau[pass_sel2])
+                if pass_sel2 in event : event[nstau] += stau[pass_sel1] * stau[pass_sel2] # key exists  
+                else : event[nstau] = stau[pass_sel1] * stau[pass_sel2]
 
 
 

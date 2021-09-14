@@ -29,15 +29,15 @@ nevents=1000
 #python test_hepmc.py --mass "100" --lifetime "1ns" --nevents ${nevents}
 #python test_hepmc.py --mass "300" --lifetime "1ns" --nevents ${nevents}
 #python test_hepmc.py --mass "500" --lifetime "1ns" --nevents ${nevents}
-python test_hepmc.py --mass "700" --lifetime "1ns" --nevents ${nevents}
-python test_hepmc.py --mass "1000" --lifetime "1ns" --nevents ${nevents}
+#python test_hepmc.py --mass "700" --lifetime "1ns" --nevents ${nevents}
+#python test_hepmc.py --mass "1000" --lifetime "1ns" --nevents ${nevents}
 
 # vary mass stable
-#python test_hepmc.py --mass "100" --lifetime "stable" --nevents ${nevents}
-#python test_hepmc.py --mass "300" --lifetime "stable" --nevents ${nevents}
-#python test_hepmc.py --mass "500" --lifetime "stable" --nevents ${nevents}
-#python test_hepmc.py --mass "700" --lifetime "stable" --nevents ${nevents}
-#python test_hepmc.py --mass "1000" --lifetime "stable" --nevents ${nevents}
+python test_hepmc.py --mass "100" --lifetime "stable" --nevents ${nevents}
+python test_hepmc.py --mass "300" --lifetime "stable" --nevents ${nevents}
+python test_hepmc.py --mass "500" --lifetime "stable" --nevents ${nevents}
+python test_hepmc.py --mass "700" --lifetime "stable" --nevents ${nevents}
+python test_hepmc.py --mass "1000" --lifetime "stable" --nevents ${nevents}
 
 #whole set of samples
 #python test_hepmc.py --mass "100" --lifetime "1ns" --nevents ${nevents}
