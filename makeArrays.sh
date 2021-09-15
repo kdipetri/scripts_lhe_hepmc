@@ -2,6 +2,10 @@ nevents=1000
 #nevents=500
 #nevents=100
 
+#python test_hepmc.py --mass "1000" --lifetime "stable" --nevents 10 --doTest True
+#python test_bkg.py --nevents 10  --doTest True
+#python test_bkg.py --nevents 1000
+
 # basic vary lifetime, 500
 #python test_hepmc.py --mass "500" --lifetime "stable"  --nevents ${nevents}
 #python test_hepmc.py --mass "500" --lifetime "10ns"    --nevents ${nevents}
@@ -32,7 +36,7 @@ nevents=1000
 #python test_hepmc.py --mass "700" --lifetime "1ns" --nevents ${nevents}
 #python test_hepmc.py --mass "1000" --lifetime "1ns" --nevents ${nevents}
 
-# vary mass stable
+## vary mass stable
 python test_hepmc.py --mass "100" --lifetime "stable" --nevents ${nevents}
 python test_hepmc.py --mass "300" --lifetime "stable" --nevents ${nevents}
 python test_hepmc.py --mass "500" --lifetime "stable" --nevents ${nevents}

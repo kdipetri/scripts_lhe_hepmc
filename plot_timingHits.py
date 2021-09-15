@@ -29,12 +29,15 @@ def get_bins(dist):
     elif "hitDist" in dist: return np.linspace(0,5000,50) 
     elif "hitBeta" in dist: return np.linspace(0,1.5,30) 
     elif "betagamma" in dist: return np.linspace(0,10,50)
+    elif "Pt" in dist: return np.linspace(0,500,50)
+    elif "Eta" in dist: return np.linspace(-5,5,50)
     return np.linspace(0,1000,50)
 
 def get_array(mass,lifetime,dist):
     f = open('output/stau_{}_{}.json'.format(mass,lifetime)) 
     data = json.load(f)
-    dist_array = data[dist]
+    dist_array = [ stau[dist] for stau in data["staus"] ]
+    #dist_array = data[dist]
     f.close()
     return dist_array
 
@@ -87,51 +90,58 @@ def compare1D(arrays,labels,outfile):
 def plots2D(mass,lifetime):
 
     # get hit arrays
-    hit_r = get_array(mass,lifetime,"stau_hit_r")
-    hit_z = get_array(mass,lifetime,"stau_hit_z")
-    hit_t = get_array(mass,lifetime,"stau_hit_t")
-    stau_betagamma = get_array(mass,lifetime,"stau_betagamma")
-    stau_p  = get_array(mass,lifetime,"stau_p")
+    #hit_r = get_array(mass,lifetime,"hit_r")
+    #hit_z = get_array(mass,lifetime,"hit_z")
+    #hit_t = get_array(mass,lifetime,"hit_t")
+    #stau_betagamma = get_array(mass,lifetime,"betagamma")
+    #stau_p  = get_array(mass,lifetime,"p")
+    stau_pt   = get_array(mass,lifetime,"pt")
+    stau_eta  = get_array(mass,lifetime,"eta")
 
     pre="plots/2Dhits/mass_{}_{}".format(mass,lifetime)
 
-    # plot 2D
-    plot2D(hit_z,hit_r,"{}_hitR_v_hitZ.pdf".format(pre) )
+    #misc
+    plot2D(stau_eta,stau_pt,"{}_stauPt_v_stauEta.pdf".format(pre))
 
-    # plot 1D
+    ## plot 2D
+    #plot2D(hit_z,hit_r,"{}_hitR_v_hitZ.pdf".format(pre) )
 
-    hit_dist = []
-    hit_beta = [] # v/c
-    hit_mass = []
-    for i in range(0,len(hit_r)):
+    ## plot 1D
 
-        dist = (hit_r[i]**2 + hit_z[i]**2)**0.5
-        beta = ( dist / 1e3) / (hit_t[i] / 1e9) / c # v / c 
-        gamma = 1.0/(1-beta**2)**0.5 
-        mass = stau_p[i]/(beta*gamma)
-        #print(dist,beta,hit_t[i])
+    #hit_dist = []
+    #hit_beta = [] # v/c
+    #hit_mass = []
+    #for i in range(0,len(hit_r)):
 
-        hit_dist.append(dist) 
-        hit_beta.append(beta)
-        hit_mass.append(mass)
+    #    dist = (hit_r[i]**2 + hit_z[i]**2)**0.5
+    #    beta = ( dist / 1e3) / (hit_t[i] / 1e9) / c # v / c 
+    #    gamma = 1.0/(1-beta**2)**0.5 
+    #    mass = stau_p[i]/(beta*gamma)
+    #    #print(dist,beta,hit_t[i])
 
-    plot2D(hit_dist,hit_t   ,"{}_hitT_v_hitDist.pdf".format(pre) )
-    plot2D(hit_dist,hit_beta,"{}_hitBeta_v_hitDist.pdf".format(pre) )
-    plot2D(stau_betagamma,hit_beta,"{}_hitBeta_v_betagamma.pdf".format(pre) )
-    plot1D(hit_t   ,"{}_hitT.pdf"   .format(pre))
-    plot1D(hit_dist,"{}_hitDist.pdf".format(pre))
-    plot1D(hit_beta,"{}_hitBeta.pdf".format(pre))
-    plot1D(hit_mass,"{}_hitMass.pdf".format(pre))
-    plot1D(stau_betagamma,"{}_betagamma.pdf".format(pre))
+    #    hit_dist.append(dist) 
+    #    hit_beta.append(beta)
+    #    hit_mass.append(mass)
+
+    #plot2D(hit_dist,hit_t   ,"{}_hitT_v_hitDist.pdf".format(pre) )
+    #plot2D(hit_dist,hit_beta,"{}_hitBeta_v_hitDist.pdf".format(pre) )
+    #plot2D(stau_betagamma,hit_beta,"{}_hitBeta_v_betagamma.pdf".format(pre) )
+    #plot1D(hit_t   ,"{}_hitT.pdf"   .format(pre))
+    #plot1D(hit_dist,"{}_hitDist.pdf".format(pre))
+    #plot1D(hit_beta,"{}_hitBeta.pdf".format(pre))
+    #plot1D(hit_mass,"{}_hitMass.pdf".format(pre))
+    #plot1D(stau_betagamma,"{}_betagamma.pdf".format(pre))
 
     return (hit_t,hit_dist,hit_beta,hit_mass)
 
-(time200, dist200, beta200, mass200) = plots2D(200,"1ns")
-(time400, dist400, beta400, mass400) = plots2D(400,"1ns")
-(time600, dist600, beta600, mass600) = plots2D(600,"1ns")
+plots2D(100,"stable")
 
-pre="plots/2Dhits/compareMass"
-labels=["$m_{\\tilde{\\tau}}$=200 GeV","$m_{\\tilde{\\tau}}$=400 GeV","$m_{\\tilde{\\tau}}$=600 GeV"]
-compare1D( [beta200,beta400,beta600],labels,"{}_hitBeta.pdf".format(pre) )
-compare1D( [mass200,mass400,mass600],labels,"{}_hitMass.pdf".format(pre) )
-compare1D( [time200,time400,time600],labels,"{}_hitTime.pdf".format(pre) )
+#(time200, dist200, beta200, mass200) = plots2D(200,"1ns")
+#(time400, dist400, beta400, mass400) = plots2D(400,"1ns")
+#(time600, dist600, beta600, mass600) = plots2D(600,"1ns")
+#
+#pre="plots/2Dhits/compareMass"
+#labels=["$m_{\\tilde{\\tau}}$=200 GeV","$m_{\\tilde{\\tau}}$=400 GeV","$m_{\\tilde{\\tau}}$=600 GeV"]
+#compare1D( [beta200,beta400,beta600],labels,"{}_hitBeta.pdf".format(pre) )
+#compare1D( [mass200,mass400,mass600],labels,"{}_hitMass.pdf".format(pre) )
+#compare1D( [time200,time400,time600],labels,"{}_hitTime.pdf".format(pre) )

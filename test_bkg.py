@@ -10,8 +10,8 @@ import argparse
 
 #make certain things configurable
 parser = argparse.ArgumentParser(description='Input configuration for running')
-parser.add_argument('--mass'    , type=str , default='400', help='slepton mass in GeV')
-parser.add_argument('--lifetime', type=str , default='1ns', help='lifetime in ns, eg. 0p01ns') 
+parser.add_argument('--mass'    , type=str , default='100', help='slepton mass in GeV')
+parser.add_argument('--lifetime', type=str , default='stable', help='lifetime in ns, eg. 0p01ns') 
 parser.add_argument('--nevents' , type=int , default=-1   , help='nevents to run')
 parser.add_argument('--doTest'  , type=bool, default=False, help='run a test')
 
@@ -65,21 +65,14 @@ timing_configs.append("tHit50;tBS200;zBS50") # all
 
 # vary time delay (ns) 
 track_sels=[]
-# vary tof measurement 
-track_sels.append("pt10;mass10")
-track_sels.append("pt10;mass20")
-track_sels.append("pt10;mass50")
-track_sels.append("pt10;beta0.95")
-track_sels.append("pt10;beta0.90")
-track_sels.append("pt10;beta0.85")
 track_sels.append("pt10;delay0.5")
 track_sels.append("pt10;delay1.0")
 track_sels.append("pt10;delay2.0")
 # vary pt
-track_sels.append("pt10;None")
-track_sels.append("pt20;None")
-track_sels.append("pt50;None")
-track_sels.append("pt100;None")
+track_sels.append("pt10;delayNone")
+track_sels.append("pt20;delayNone")
+track_sels.append("pt50;delayNone")
+track_sels.append("pt100;delayNone")
 # vary mass? needs pt smearing
 
 
@@ -122,9 +115,14 @@ with hep.open(infile) as f:
     for particle in evt.particles :
     # This is what's in the "particle" class: 
     # http://hepmc.web.cern.ch/hepmc/classHepMC3_1_1GenParticle.html
-       if abs(particle.pid) not in pids : continue 
-       if particle.status not in statuses : continue
-       if doTest : print("This is a stau particle")
+       # bkg selection 
+       if particle.status is not 1 : continue
+       if abs(particle.pid) > 100000 and abs(particle.pid) < 9000000: continue # remove susy particles
+       if abs(particle.pid) == 22 : continue
+       if abs(particle.pid) == 21 : continue
+       if particle.momentum.pt()/toGeV < 2 : continue
+       if particle.momentum.m() <= 0 : continue
+       if doTest : print("This is a bkg particle")
 
 
        # initialize stau dict
@@ -138,6 +136,7 @@ with hep.open(infile) as f:
        stau["p"  ] = particlemom.length()/toGeV 
        stau["m"  ] = particlemom.m()/toGeV 
        stau["betagamma"]  = stau["p"]/stau["m"] 
+       stau["pdgID"] = particle.pid
     
        # Get the vertex where it decays and print its properties
        decayvtx = particle.end_vertex
@@ -173,32 +172,33 @@ with hep.open(infile) as f:
        # get isolation 
        stau["isolation"] =  get_iso( particle, evt.particles )
 
+       # Skip efficiency stuff
        # Stage One Selection 
        # Is the stau in acceptance (decaying past the tracker)
-       for tracker_config in tracker_configs: 
-            stau = passStageOne(stau,cutOpt=tracker_config)
+       #for tracker_config in tracker_configs: 
+       #     stau = passStageOne(stau,cutOpt=tracker_config)
 
-            pass_sel = "pass_StageOne_"+tracker_config
-            nstau = "nStau_"+pass_sel
-            if pass_sel in event : event[nstau] += stau[pass_sel] # key exists  
-            else : event[nstau] = stau[pass_sel]
+       #     pass_sel = "pass_StageOne_"+tracker_config
+       #     nstau = "nStau_"+pass_sel
+       #     if pass_sel in event : event[nstau] += stau[pass_sel] # key exists  
+       #     else : event[nstau] = stau[pass_sel]
 
        # Stage Two Selection: stau pT and/or delay 
        # Use timing layer hit
        # returns hit times in ns, takes in resolutions in ps
-       pass_sel1 = "pass_StageOne_lxy1200;z3000;eta2.5" # need to make sure we hit the timing layer
+       #pass_sel1 = "pass_StageOne_lxy1200;z3000;eta2.5" # need to make sure we hit the timing layer
 
        for timing_config in timing_configs: 
             stau = getHit(stau,particle,smearOpt=timing_config) 
 
-            for track_sel in track_sels: 
-                stau = passStageTwo(stau,cutOpt=track_sel,smearOpt=timing_config) 
+       #     for track_sel in track_sels: 
+       #         stau = passStageTwo(stau,cutOpt=track_sel,smearOpt=timing_config) 
 
-                pass_sel2 = "pass_StageTwo_"+track_sel+"_"+timing_config
-                nstau = "nStau_"+pass_sel2
-                #print(stau[pass_sel1], stau[pass_sel2], stau[pass_sel1]*stau[pass_sel2])
-                if pass_sel2 in event : event[nstau] += stau[pass_sel1] * stau[pass_sel2] # key exists  
-                else : event[nstau] = stau[pass_sel1] * stau[pass_sel2]
+       #         pass_sel2 = "pass_StageTwo_"+track_sel+"_"+timing_config
+       #         nstau = "nStau_"+pass_sel2
+       #         #print(stau[pass_sel1], stau[pass_sel2], stau[pass_sel1]*stau[pass_sel2])
+       #         if pass_sel2 in event : event[nstau] += stau[pass_sel1] * stau[pass_sel2] # key exists  
+       #         else : event[nstau] = stau[pass_sel1] * stau[pass_sel2]
 
 
 
@@ -206,30 +206,28 @@ with hep.open(infile) as f:
        staus.append(stau)
        # end stau loop
     
-    # 
-    # compute if event has at least one stau passing trigger 
-    #
+    ## 
+    ## compute if event has at least one stau passing trigger 
+    ##
 
-    # stage 1
-    for tracker_config in tracker_configs: 
-        pass_sel = "pass_StageOne_"+tracker_config
-        nstau = "nStau_"+pass_sel
-        event[pass_sel] =  event[nstau] >= 1
+    ## stage 1
+    #for tracker_config in tracker_configs: 
+    #    pass_sel = "pass_StageOne_"+tracker_config
+    #    nstau = "nStau_"+pass_sel
+    #    event[pass_sel] =  event[nstau] >= 1
 
-    # stage 2
-    for timing_config in timing_configs: 
-       for track_sel in track_sels: 
-            pass_sel = "pass_StageTwo_"+track_sel+"_"+timing_config
-            nstau = "nStau_"+pass_sel
-            event[pass_sel] =  event[nstau] >= 1
+    ## stage 2
+    #for timing_config in timing_configs: 
+    #   for track_sel in track_sels: 
+    #        pass_sel = "pass_StageTwo_"+track_sel+"_"+timing_config
+    #        nstau = "nStau_"+pass_sel
+    #        event[pass_sel] =  event[nstau] >= 1
 
-    events.append(event)
     # end event loop
 
 data = {
     "staus" : staus,
-    "events" : events,
 }
 
-with open('output/stau_{}_{}.json'.format(mass,lifetime), 'w') as fp:
+with open('output/bkg_{}_{}.json'.format(mass,lifetime), 'w') as fp:
     json.dump(data, fp)

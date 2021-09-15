@@ -34,19 +34,21 @@ def yscale(dist):
     else : return "linear" 
 
 def get_bins(dist):
-    if "_pt" in dist: return np.linspace(0,1000,20)
-    elif "_eta" in dist: return np.linspace(-4,4,20)
-    elif "_phi" in dist: return np.linspace(-4,4,20)
-    elif "_Lxy" in dist: return np.linspace(0,1000,100)
-    elif "_betagamma" in dist: return np.linspace(0,10,20)
-    elif "_isolation" in dist: return np.linspace(0,1,20)
-    elif "_decaytime" in dist: return np.linspace(0,1,20)
+    if "_pt" in dist: return np.linspace(0,1000,50)
+    elif "_eta" in dist: return np.linspace(-5,5,50)
+    elif "_phi" in dist: return np.linspace(-4,4,40)
+    elif "_Lxy" in dist: return np.linspace(0,1500,60)
+    elif "_betagamma" in dist: return np.linspace(0,30,30)
+    elif "_isolation" in dist: return np.linspace(0,3,60)
+    elif "_decaytime" in dist: return np.linspace(0,6,60)
     elif "_hit_t"     in dist: return np.linspace(0,20,50) 
-    elif "_hit_delay" in dist: return np.linspace(0,10,50) 
+    elif "_hit_delay" in dist: return np.linspace(-2,10,60) 
     elif "_hit_betaRes" in dist: return np.linspace(-0.2,0.2,50) 
     elif "_hit_massRes" in dist: return np.linspace(-400,400,50) 
     elif "_hit_beta" in dist: return np.linspace(0,1.5,50) 
-    elif "_hit_mass" in dist: return np.linspace(0,1000,50) 
+    elif "_hit_invBeta" in dist: return np.linspace(0,10,50) 
+    elif "_hit_invBetaRes" in dist: return np.linspace(-10,10,50) 
+    elif "_hit_mass" in dist: return np.linspace(0,1200,60) 
     return np.linspace(0,1000,20)
 
 def get_array(mass,lifetime,dist):
@@ -56,12 +58,26 @@ def get_array(mass,lifetime,dist):
     f.close()
     return dist_array
 
-def compare1D(arrays,labels,outfile):
+def get_bkg_array(dist,mass=100,lifetime="stable"):
+    f = open('output/bkg_{}_{}.json'.format(mass,lifetime)) 
+    data = json.load(f)
+    dist_array = [ stau[dist] for stau in data["staus"] ]
+    f.close()
+    return dist_array
+
+def compare1D(arrays,labels,outfile,norm=0):
+    if "withbkg" in outfile : norm=1
     bins = get_bins(outfile)
     plt.style.use('seaborn-colorblind')
 
     for i in range(0,len(arrays)):
-        plt.hist(arrays[i], bins, histtype='step', label=labels[i])
+        (counts, bins) = np.histogram(arrays[i], bins=bins)
+        factor = len(arrays[i])
+        if "bkg" in labels[i]: 
+            plt.hist(bins[:-1], bins, histtype='step', color="tab:gray", label=labels[i], weights=counts/factor)
+        else : 
+            plt.hist(bins[:-1], bins, histtype='step', label=labels[i], weights=counts/factor)
+            #plt.hist(arrays[i], bins, histtype='step', label=labels[i], density=norm)
 
     plt.legend(loc='upper right')
     plt.yscale(yscale(outfile))
@@ -72,9 +88,9 @@ def compare1D(arrays,labels,outfile):
     print(outfile)
     return
 
-def compareMass(dist,lifetime="1ns"):
-    masses = ["200","400","600"]
-    #masses = ["100","200","300","400","500","600"]
+def compareMass(dist,lifetime="stable"):
+    masses = ["100","500","1000"]
+    #masses = ["100","300","500","700","1000"]
 
     arrays = []
     labels = []
@@ -83,13 +99,21 @@ def compareMass(dist,lifetime="1ns"):
         labels.append("M={} GeV".format(mass))
         #labels.append("M={} GeV, {}".format(mass,lifetime))
 
+    # no bkg
     outfile="plots/compareMass_{}_{}.pdf".format(lifetime,dist)
     compare1D(arrays,labels,outfile)
+
+    # add bkg
+    arrays.append(get_bkg_array(dist))
+    labels.append("Bkg")
+    outfile="plots/compareMass_{}_{}_withbkg.pdf".format(lifetime,dist)
+    compare1D(arrays,labels,outfile)
+
     return
 
 
 def compareLifetime(dist,mass="500"):
-    lifetimes = ["0p01ns","0p1ns","1ns","10ns"]
+    lifetimes = ["0p01ns","0p1ns","1ns","10ns","stable"]
 
     arrays = []
     labels = []
@@ -98,7 +122,7 @@ def compareLifetime(dist,mass="500"):
         labels.append("M={} GeV, {}".format(mass,lifetime))
         print(lifetime)
 
-    outfile="plots/compareLifetime_{}_{}.pdf".format(lifetime,dist)
+    outfile="plots/compareLifetime_{}_{}.pdf".format(mass,dist)
     compare1D(arrays,labels,outfile)
     return
 
@@ -127,31 +151,49 @@ def compareTimeRes(dist,mass="600",lifetime = "1ns"):
     compare1D(arrays,labels,outfile)
     return
 
-# Compare stau properties for different masses and lifetimes
-compareLifetime("lxy")
-#compareLifetime("decaytime")
+# Compare stau displacement properties for lifetimes
+compareLifetime("lxy",500)
+compareLifetime("lxy",100)
+compareLifetime("z",500)
+compareLifetime("z",100)
+compareLifetime("decaytime",500)
+compareLifetime("decaytime",100)
 
+# Compare stau kinematics for different masses, with and without bkg
+compareMass("eta","1ns") 
+compareMass("phi","1ns") 
+compareMass("pt" ,"1ns") 
+compareMass("m"  ,"1ns") 
+compareMass("lxy","1ns") 
+compareMass("betagamma","1ns") 
+compareMass("decaytime","1ns") 
+compareMass("isolation","1ns")
+
+#
+s="_tHit50;tBS200;zBS0" 
+compareMass("hit_time"+s)
+compareMass("hit_delay"+s)
+compareMass("hit_beta"+s)
+compareMass("hit_betaRes"+s)
+compareMass("hit_invBeta"+s)
+compareMass("hit_invBetaRes"+s)
+compareMass("hit_mass"+s)
+compareMass("hit_massRes"+s)
+
+s="_tHit50;tBS0;zBS0" 
+compareMass("hit_time"+s)
+compareMass("hit_delay"+s)
+compareMass("hit_beta"+s)
+compareMass("hit_betaRes"+s)
+compareMass("hit_invBeta"+s)
+compareMass("hit_invBetaRes"+s)
+compareMass("hit_mass"+s)
+compareMass("hit_massRes"+s)
+
+# compare timing resolution methods
 #compareTimeRes("hit_time")
 #compareTimeRes("hit_delay")
 #compareTimeRes("hit_beta")
 #compareTimeRes("hit_betaRes")
 #compareTimeRes("hit_mass")
 #compareTimeRes("hit_massRes")
-#
-#compareMass("eta") 
-#compareMass("phi") 
-#compareMass("pt" ) 
-#compareMass("m"  ) 
-#compareMass("lxy") 
-#compareMass("betagamma") 
-#compareMass("decaytime") 
-#compareMass("isolation")
-
-#
-s="_tHit50;tBS200;zBS50" 
-#compareMass("hit_time"+s)
-compareMass("hit_delay"+s)
-#compareMass("hit_beta"+s)
-#compareMass("hit_betaRes"+s)
-#compareMass("hit_mass"+s)
-#compareMass("hit_massRes"+s)

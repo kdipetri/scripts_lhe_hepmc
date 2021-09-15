@@ -104,14 +104,31 @@ def getHit(stau, particle, r_=1150, z_=3000, smearOpt="tHit50;tBS200;zBS50" ) :
     
     # beta = v/c = d/t /c 
     beta = ( dist_origin  / 1e3 )/( t / 1e9 )/c #measured beta
-    gamma = 1.0/(1-beta**2)**0.5 if beta < 1 else 100 # measured gamma
+    invBeta = 1./beta if beta > 0.1 else 10 # inverse beta
+    gamma = 1.0/(1-beta**2)**0.5  if beta < 1  else 100 # measured gamma
+
+    # momentum smearing sigma(pT) = 0.01 * pT + some pT dependent term
+    # fix this later!! or make CMS dependent
+    res = 0.01
+    if stau["p"] > 100.: res = 0.01 * stau["p"]**2 /100. # reaches 10% at 1 TeV
+    pSmear = random.gauss( stau["p"], res  ) 
+    
+    #print( stau["p"], res, pSmear )
     mass = stau["p"]/(beta*gamma) if beta < 1 else 0
 
     betaRes = beta - velocity(particle) / c / 1000.
+    invBetaRes = invBeta - 1.0 / ( velocity(particle) / c / 1000. )
     massRes = mass - stau["m"]
+
+    # debugging
+    #if beta < 0 : 
+    #    print( stau["pdgID"],stau["pt"], stau["eta"], stau["phi"], stau["m"])
+    #    print(beta,gamma,mass,betaRes,massRes)
 
     stau["hit_beta"+s] = beta 
     stau["hit_betaRes"+s] = betaRes 
+    stau["hit_invBeta"+s] = invBeta  
+    stau["hit_invBetaRes"+s] = invBetaRes  
     stau["hit_gamma"+s] = gamma  
     stau["hit_mass"+s] = mass 
     stau["hit_massRes"+s] = massRes 

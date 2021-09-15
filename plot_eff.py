@@ -58,9 +58,19 @@ def get_bins(xvariable,outfile):
 def get_efficiency(sample,selection):
     f = open('output/stau_{}.json'.format(sample)) 
     data = json.load(f)
+
+    # Stage 2 pass
     event_array = [ event[selection] for event in data["events"] ]
     npass = float(sum(event_array))
-    nevents = float(len(event_array))
+
+    # Stage 1 acceptance for nominal selection
+    stageOne = "pass_StageOne_lxy1200;z3000;eta2.5"
+    # for now just compute total efficiency (since we focus on stable)
+    # later can add option for efficiency with respect to acceptance
+    
+    seen_array = [ event[stageOne] for event in data["events"] ]
+    nevents = float(sum(seen_array))
+
     eff = npass/nevents
     err = (math.sqrt(( npass / nevents ) * (1.0 - ( npass / nevents )) / nevents))
     f.close()
@@ -85,23 +95,16 @@ def compare_effs(yvals,yerrs,xvariable,labels,outfile):
     print(outfile)
     return
 
-def eff_array_samples(samples=["500_0p01ns","500_1ns","500_10ns"],pt=10,delay=1.0,tHit=50,tBS=200,zBS=50):
+def eff_array_samples(samples=["500_0p01ns","500_1ns","500_10ns"],pt=10,timeCut="None",tHit=50,tBS=200,zBS=50):
 
     # returns an array of efficiency versus different masses or lifetimes 
 
-    # Stage 1 acceptance for nominal selection
-    lxy=1200
-    z=3000
-    eta=2.5 # keep fixed
-    sel1 = "pass_StageOne_lxy{};z{};eta{}".format(lxy,z,eta)
-    # for now just compute total efficiency (since we focus on stable)
-    # later can add option for efficiency with respect to acceptance
 
     # Stage 2 more refined track selection 
     eff_array = []
     err_array = []
     for sample in samples:
-        sel2 = "pass_StageTwo_pt{};delay{}_tHit{};tBS{};zBS{}".format(pt,delay,tHit,tBS,zBS)
+        sel2 = "pass_StageTwo_pt{};{}_tHit{};tBS{};zBS{}".format(pt,timeCut,tHit,tBS,zBS)
 
         eff,err = get_efficiency(sample, sel2)
         eff_array.append( eff )
@@ -116,13 +119,13 @@ def compare_eff_pt(lifetime="stable"):
 
     pts=[10,20,50,100]
     labels_pt  = ["pT > {} GeV".format(x) for x in pts]
-    delay="None"
+    timeCut="None"
 
     # stau mass x-axis
     effs_mass = []
     errs_mass = []
     for pt in pts : 
-        effs,errs = eff_array_samples(samples_mass,pt=pt,delay=delay)
+        effs,errs = eff_array_samples(samples_mass,pt=pt,timeCut=timeCut)
         effs_mass.append( effs )
         errs_mass.append( errs )
 
@@ -133,20 +136,44 @@ def compare_eff_delay(lifetime="stable"):
     # compares efficiencies for different masses or lifetimes
     samples_mass = ["100_"+lifetime,"300_"+lifetime,"500_"+lifetime,"700_"+lifetime,"1000_"+lifetime]
 
-    delays=["None",0.5,1.0,2.0]
-    labels_delay  = ["delay > {} ns".format(x) for x in delays]
+    delays=["None","delay0.5","delay1.0","delay2.0"]
+    betas=["None","beta0.95","beta0.90","beta0.85"]
+    mtofs=["None","mass10","mass20","mass50"]
+    labels_delay  = ["delay > {} ns".format(x.strip("delay")) for x in delays]
     labels_delay[0]="None"
+    labels_beta  = ["beta > {} ".format(x.strip("beta")) for x in betas]
+    labels_beta[0]="None"
+    labels_mtof  = ["mTOF > {} GeV".format(x.strip("mass")) for x in mtofs]
+    labels_mtof[0]="None"
     pt=10 
 
     # stau mass x-axis
     effs_mass = []
     errs_mass = []
     for delay in delays : 
-        effs,errs = eff_array_samples(samples_mass,pt=pt,delay=delay)
+        effs,errs = eff_array_samples(samples_mass,pt=pt,timeCut=delay)
         effs_mass.append( effs )
         errs_mass.append( errs )
 
     compare_effs(effs_mass, errs_mass, samples_mass, labels_delay,"plots/effs/eff_v_mass_for_delay_l{}.pdf".format(lifetime))
+
+    effs_mass = []
+    errs_mass = []
+    for beta in betas : 
+        effs,errs = eff_array_samples(samples_mass,pt=pt,timeCut=beta)
+        effs_mass.append( effs )
+        errs_mass.append( errs )
+
+    compare_effs(effs_mass, errs_mass, samples_mass, labels_beta,"plots/effs/eff_v_mass_for_beta_l{}.pdf".format(lifetime))
+
+    effs_mass = []
+    errs_mass = []
+    for mtof in mtofs : 
+        effs,errs = eff_array_samples(samples_mass,pt=pt,timeCut=mtof)
+        effs_mass.append( effs )
+        errs_mass.append( errs )
+
+    compare_effs(effs_mass, errs_mass, samples_mass, labels_mtof,"plots/effs/eff_v_mass_for_mTOF_l{}.pdf".format(lifetime))
 
 
 # Stage 2 efficiency versus different pT cuts 
