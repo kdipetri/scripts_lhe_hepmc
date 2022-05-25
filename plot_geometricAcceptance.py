@@ -2,58 +2,14 @@ import json
 import time
 import math
 import numpy as np
+
 #https://www.quora.com/What-is-matplotlib-use-and-why-do-we-use-them
 import matplotlib 
 matplotlib.use('pdf') # for speed? 
 import matplotlib.pyplot as plt
 
-def ytitle(dist):
-    # maybe modify this
-    if "eff_v" in dist: return "efficiency"
-    if "acc_v" in dist: return "acceptance"
-    if "axe_v" in dist: return "AxE"
-    return ""
+from plot_helper import *
 
-def xtitle(dist):
-    if "v_pt" in dist: return "$p_{T}$ [GeV]" 
-    elif "v_eta" in dist: return "$\eta$" 
-    elif "v_phi" in dist: return "$\phi$" 
-    elif "v_lxy" in dist: return "min $L_{xy}$ [mm]" 
-    elif "v_z" in dist: return "$z$ [mm]" 
-    elif "v_m" in dist: return "mass [GeV]"
-    elif "v_life" in dist: return "lifetime, $\\tau$ [ns]"
-    return "" 
-
-def lifetime(txt):
-    # changes lifetime text to number
-    l=""
-    if "0p001"  in txt: l = "0.001"
-    elif "0p01" in txt: l = "0.01"
-    elif "0p1"  in txt: l = "0.1"
-    elif "1ns"  in txt: l = "1"
-    elif "10ns" in txt: l = "10"
-    elif "stable" in txt: l = "stable"
-    return l
-    
-def sampleLabel(s):
-    m = s.split("_")[0]
-    l = lifetime(s.split("_")[1])
-    label = "m={} GeV, $\\tau$={} ns".format(m,l) 
-    if "stable" in label : 
-        label = "m={} GeV, $\\tau$={}".format(m,l)
-    return label
-    
-def yscale(dist):
-    return "linear" 
-
-def get_bins(xvariable,outfile):
-    if "v_life" in outfile: 
-        bins = [ lifetime(x) for x in xvariable]
-    elif "v_mass" in outfile:
-        bins = [ x.split("_")[0] for x in xvariable]
-    else : 
-        bins = xvariable
-    return bins
 
 def get_efficiency(sample,selection):
     f = open('output/stau_{}.json'.format(sample)) 
@@ -67,21 +23,30 @@ def get_efficiency(sample,selection):
     return eff,err 
 
 def compare_effs(yvals,yerrs,xvariable,labels,outfile):
-    bins = get_bins(xvariable,outfile)
+    bins = get_bins(outfile,xvariable)
     plt.style.use('seaborn-colorblind')
+    plt.figure(figsize=(6,5.5))
 
     for i in range(0,len(yvals)):
         plt.errorbar( bins, yvals[i], yerrs[i], label=labels[i], marker = "o", alpha=0.5)
-        #plt.plot(xvariable, arrays[i],  label=labels[i])
-        #plt.hist(arrays[i], bins, histtype='step', label=labels[i])
 
-    plt.legend(loc='upper left')
+    plt.subplots_adjust(left=0.18, right=0.95, top=0.9, bottom=0.18)
+    plt.grid(visible=True, which='major', axis='both', color='gainsboro')
+
     plt.yscale(yscale(outfile))
-    plt.ylim(0.0,1.0)
-    plt.xlabel(xtitle(outfile))
-    plt.ylabel(ytitle(outfile))
+    plt.ylim(-0.05,1.05)
+   
+    size=20 
+    plt.xlabel(xtitle(outfile),fontsize=size, labelpad=size/2)
+    plt.ylabel(ytitle(outfile),fontsize=size, labelpad=size/2)
+    plt.xticks(fontsize=size-4)
+    plt.yticks(fontsize=size-4)
+    plt.title(title(outfile),fontsize=size-4)
+    plt.legend(loc=leg_loc(outfile),prop={'size':size-4,})
+
     plt.savefig(outfile)
     plt.clf()
+
     print(outfile)
     return
 
@@ -133,7 +98,7 @@ def compare_eff_lxy(lifetime="10ns",mass="500"):
     samples_mass = ["100_"+lifetime,"300_"+lifetime,"500_"+lifetime,"700_"+lifetime,"1000_"+lifetime]
     z=3000
     eta=2.5
-    labels_lxy  = ["Lxy > {} mm".format(x) for x in lxys]
+    labels_lxy  = ["$L_{xy}$ = " + "{} mm".format(x) for x in lxys]
     labels_life = [sampleLabel(s) for s in samples_life]
     labels_mass = [sampleLabel(s) for s in samples_mass]
 
@@ -152,8 +117,8 @@ def compare_eff_lxy(lifetime="10ns",mass="500"):
         effs_mass.append( effs ) 
         errs_mass.append( errs ) 
 
-    compare_effs(effs_life, errs_life, lxys, labels_life,"plots/effs/eff_v_lxy_for_life_m{}.pdf".format(mass))
-    compare_effs(effs_mass, errs_mass, lxys, labels_mass,"plots/effs/eff_v_lxy_for_mass_l{}.pdf".format(lifetime))
+    compare_effs(effs_life, errs_life, lxys, labels_life,"plots/effs/acc_v_lxy_for_life_m{}.pdf".format(mass))
+    compare_effs(effs_mass, errs_mass, lxys, labels_mass,"plots/effs/acc_v_lxy_for_mass_l{}.pdf".format(lifetime))
 
     # sample lifetime or mass x-axis
     effs_life = []
@@ -168,8 +133,8 @@ def compare_eff_lxy(lifetime="10ns",mass="500"):
         effs_mass.append( effs )
         errs_mass.append( errs )
 
-    compare_effs(effs_life, errs_life, samples_life, labels_lxy,"plots/effs/eff_v_life_for_lxy_m{}.pdf".format(mass))
-    compare_effs(effs_mass, errs_mass, samples_mass, labels_lxy,"plots/effs/eff_v_mass_for_lxy_l{}.pdf".format(lifetime))
+    compare_effs(effs_life, errs_life, samples_life, labels_lxy,"plots/effs/acc_v_life_for_lxy_m{}.pdf".format(mass))
+    compare_effs(effs_mass, errs_mass, samples_mass, labels_lxy,"plots/effs/acc_v_mass_for_lxy_l{}.pdf".format(lifetime))
 
 def compare_eff_eta(lifetime="1ns",mass="500"):
 
@@ -199,8 +164,8 @@ def compare_eff_eta(lifetime="1ns",mass="500"):
         effs_mass.append( effs ) 
         errs_mass.append( errs ) 
 
-    compare_effs(effs_life, errs_life, etas, labels_life,"plots/effs/eff_v_eta_for_life_m{}.pdf".format(mass))
-    compare_effs(effs_mass, errs_mass, etas, labels_mass,"plots/effs/eff_v_eta_for_mass_l{}.pdf".format(lifetime))
+    compare_effs(effs_life, errs_life, etas, labels_life,"plots/effs/acc_v_eta_for_life_m{}.pdf".format(mass))
+    compare_effs(effs_mass, errs_mass, etas, labels_mass,"plots/effs/acc_v_eta_for_mass_l{}.pdf".format(lifetime))
 
     # sample lifetime or mass x-axis
     effs_life = []
@@ -215,8 +180,8 @@ def compare_eff_eta(lifetime="1ns",mass="500"):
         effs_mass.append( effs )
         errs_mass.append( errs )
 
-    compare_effs(effs_life, errs_life, samples_life, labels_eta,"plots/effs/eff_v_life_for_eta_m{}.pdf".format(mass))
-    compare_effs(effs_mass, errs_mass, samples_mass, labels_eta,"plots/effs/eff_v_mass_for_eta_l{}.pdf".format(lifetime))
+    compare_effs(effs_life, errs_life, samples_life, labels_eta,"plots/effs/acc_v_life_for_eta_m{}.pdf".format(mass))
+    compare_effs(effs_mass, errs_mass, samples_mass, labels_eta,"plots/effs/acc_v_mass_for_eta_l{}.pdf".format(lifetime))
     
 # Compare efficiencies  
 

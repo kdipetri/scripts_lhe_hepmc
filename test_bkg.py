@@ -120,7 +120,7 @@ with hep.open(infile) as f:
        if abs(particle.pid) > 100000 and abs(particle.pid) < 9000000: continue # remove susy particles
        if abs(particle.pid) == 22 : continue
        if abs(particle.pid) == 21 : continue
-       if particle.momentum.pt()/toGeV < 2 : continue
+       if particle.momentum.pt()/toGeV < 10. : continue
        if particle.momentum.m() <= 0 : continue
        if doTest : print("This is a bkg particle")
 

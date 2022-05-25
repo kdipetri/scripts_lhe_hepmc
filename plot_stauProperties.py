@@ -1,55 +1,15 @@
 import json
 import time
 import numpy as np
+
 #https://www.quora.com/What-is-matplotlib-use-and-why-do-we-use-them
 import matplotlib 
 matplotlib.use('pdf') # for speed? 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
-def ytitle(dist):
-    return "staus"
+from plot_helper import *
 
-def xtitle(dist):
-    if "_pt" in dist: return "$p_{T}$ [GeV]" 
-    elif "_eta" in dist: return "$\eta$" 
-    elif "_phi" in dist: return "$\phi$" 
-    elif "_lxy" in dist: return "$r_{xy}$ [mm]" 
-    elif "_betagamma" in dist: return "$\\beta\gamma$" 
-    elif "_isolation" in dist: return "isolation" 
-    elif "_decaytime" in dist: return "decay time [ns]" 
-    elif "_hit_t"     in dist: return "$t_{hit}$ [ns]" 
-    elif "_hit_delay" in dist: return "$t_{hit}-t_{0}$ [ns]" 
-    elif "_hit_betaRes" in dist: return "$\\beta$ meas.-$\\beta$ true." 
-    elif "_hit_massRes" in dist: return "$m_{ToF}$ -$m_{True}$ [GeV]" 
-    elif "_hit_beta" in dist: return "$\\beta$ meas." 
-    elif "_hit_mass" in dist: return "$m_{ToF}$ [GeV]" 
-    elif "_m" in dist: return "mass [GeV]"
-    return "" 
-
-def yscale(dist):
-    if "_lxy" in dist: return "log" 
-    if "_decaytime" in dist: return "log" 
-    if "_hit_betaRes" in dist: return "log" 
-    if "_hit_massRes" in dist: return "log" 
-    else : return "linear" 
-
-def get_bins(dist):
-    if "_pt" in dist: return np.linspace(0,1000,50)
-    elif "_eta" in dist: return np.linspace(-5,5,50)
-    elif "_phi" in dist: return np.linspace(-4,4,40)
-    elif "_Lxy" in dist: return np.linspace(0,1500,60)
-    elif "_betagamma" in dist: return np.linspace(0,30,30)
-    elif "_isolation" in dist: return np.linspace(0,3,60)
-    elif "_decaytime" in dist: return np.linspace(0,6,60)
-    elif "_hit_t"     in dist: return np.linspace(0,20,50) 
-    elif "_hit_delay" in dist: return np.linspace(-2,10,60) 
-    elif "_hit_betaRes" in dist: return np.linspace(-0.2,0.2,50) 
-    elif "_hit_massRes" in dist: return np.linspace(-400,400,50) 
-    elif "_hit_beta" in dist: return np.linspace(0,1.5,50) 
-    elif "_hit_invBeta" in dist: return np.linspace(0,10,50) 
-    elif "_hit_invBetaRes" in dist: return np.linspace(-10,10,50) 
-    elif "_hit_mass" in dist: return np.linspace(0,1200,60) 
-    return np.linspace(0,1000,20)
 
 def get_array(mass,lifetime,dist):
     f = open('output/stau_{}_{}.json'.format(mass,lifetime)) 
@@ -69,20 +29,35 @@ def compare1D(arrays,labels,outfile,norm=0):
     if "withbkg" in outfile : norm=1
     bins = get_bins(outfile)
     plt.style.use('seaborn-colorblind')
+    plt.figure(figsize=(6,5.5))
 
     for i in range(0,len(arrays)):
         (counts, bins) = np.histogram(arrays[i], bins=bins)
         factor = len(arrays[i])
-        if "bkg" in labels[i]: 
-            plt.hist(bins[:-1], bins, histtype='step', color="tab:gray", label=labels[i], weights=counts/factor)
+        if "SM" in labels[i]: 
+            plt.hist(bins[:-1], bins, histtype='stepfilled', color="tab:gray", alpha=0.7, label=labels[i], weights=counts/factor)
         else : 
             plt.hist(bins[:-1], bins, histtype='step', label=labels[i], weights=counts/factor)
-            #plt.hist(arrays[i], bins, histtype='step', label=labels[i], density=norm)
 
-    plt.legend(loc='upper right')
+    if "hit_t" in outfile:
+        ax = plt.axes()
+        ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+        ax.yaxis.set_major_locator(plt.MaxNLocator(5))
+
+    plt.subplots_adjust(left=0.18, right=0.95, top=0.9, bottom=0.18)
+    plt.grid(visible=True, which='major', axis='both', color='gainsboro')
+
     plt.yscale(yscale(outfile))
-    plt.xlabel(xtitle(outfile))
-    plt.ylabel(ytitle(outfile))
+    #plt.ylim(-0.05,1.05)
+   
+    size=20 
+    plt.xlabel(xtitle(outfile),fontsize=size, labelpad=size/2)
+    plt.ylabel(ytitle(outfile),fontsize=size, labelpad=size/2)
+    plt.xticks(fontsize=size-4)
+    plt.yticks(fontsize=size-4)
+    plt.title(title(outfile),fontsize=size-4)
+    plt.legend(loc=leg_loc(outfile),prop={'size':size-4,})
+
     plt.savefig(outfile)
     plt.clf()
     print(outfile)
@@ -90,14 +65,12 @@ def compare1D(arrays,labels,outfile,norm=0):
 
 def compareMass(dist,lifetime="stable"):
     masses = ["100","500","1000"]
-    #masses = ["100","300","500","700","1000"]
 
     arrays = []
     labels = []
     for mass in masses:
         arrays.append(get_array(mass,lifetime,dist))
-        labels.append("M={} GeV".format(mass))
-        #labels.append("M={} GeV, {}".format(mass,lifetime))
+        labels.append("$m_{\\tilde{\\tau}}$"+" = {} GeV".format(mass))
 
     # no bkg
     outfile="plots/compareMass_{}_{}.pdf".format(lifetime,dist)
@@ -105,7 +78,7 @@ def compareMass(dist,lifetime="stable"):
 
     # add bkg
     arrays.append(get_bkg_array(dist))
-    labels.append("Bkg")
+    labels.append("SM particles")
     outfile="plots/compareMass_{}_{}_withbkg.pdf".format(lifetime,dist)
     compare1D(arrays,labels,outfile)
 
@@ -119,7 +92,7 @@ def compareLifetime(dist,mass="500"):
     labels = []
     for lifetime in lifetimes:
         arrays.append(get_array(mass,lifetime,dist))
-        labels.append("M={} GeV, {}".format(mass,lifetime))
+        labels.append("$m_{\\tilde{\\tau}}$"+" = {} GeV, {}".format(mass,lifetime))
         print(lifetime)
 
     outfile="plots/compareLifetime_{}_{}.pdf".format(mass,dist)

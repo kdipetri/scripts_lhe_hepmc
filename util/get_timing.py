@@ -41,6 +41,13 @@ def getSmearVals(smearOpt):
         if "zBS"  in opt: sig_zBS =float(opt.strip("zBS" ))
     return(sig_tHit,sig_tBS,sig_zBS)
     
+def momentumSmear(p,res):
+
+    pSmear = random.gauss( p , res * p ) 
+    if pSmear < 0 : pSmear = momentumSmear(res,p)
+    if pSmear > 10000 : pSmear = momentumSmear(res,p)
+    return pSmear
+
 def getHit(stau, particle, r_=1150, z_=3000, smearOpt="tHit50;tBS200;zBS50" ) : 
     # computes hit time for cylindrical detector
     #   barrel: fixed r(xy)_ variable z
@@ -107,13 +114,19 @@ def getHit(stau, particle, r_=1150, z_=3000, smearOpt="tHit50;tBS200;zBS50" ) :
     invBeta = 1./beta if beta > 0.1 else 10 # inverse beta
     gamma = 1.0/(1-beta**2)**0.5  if beta < 1  else 100 # measured gamma
 
-    # momentum smearing sigma(pT) = 0.01 * pT + some pT dependent term
+
+    # momentum smearing sigma(pT)/pT = A * pT (meas errr) + const. (multiple scattering)
+    # 0.02 * pT for barrel, 7% for endcaps?
     # fix this later!! or make CMS dependent
-    res = 0.01
-    if stau["p"] > 100.: res = 0.01 * stau["p"]**2 /100. # reaches 10% at 1 TeV
-    pSmear = random.gauss( stau["p"], res  ) 
+    res = 0.02
+    if abs(stau["eta"]) > 0.7 : res = 0.03
+    if abs(stau["eta"]) > 1.5 : res = 0.03 + (abs(stau["eta"])-1.5)*0.20
+    if stau["p"] > 100.: res = res + 0.01 * stau["p"] /100. #  
+
+    pSmear = momentumSmear(stau["p"],res)
     
-    #print( stau["p"], res, pSmear )
+    #print( stau["p"], stau["eta"], res, pSmear )
+
     mass = stau["p"]/(beta*gamma) if beta < 1 else 0
 
     betaRes = beta - velocity(particle) / c / 1000.

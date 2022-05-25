@@ -6,54 +6,8 @@ import numpy as np
 import matplotlib 
 matplotlib.use('pdf') # for speed? 
 import matplotlib.pyplot as plt
+from plot_helper import *
 
-def ytitle(dist):
-    # maybe modify this
-    if "eff_v" in dist: return "efficiency"
-    if "acc_v" in dist: return "acceptance"
-    if "axe_v" in dist: return "AxE"
-    return ""
-
-def xtitle(dist):
-    if "v_pt" in dist: return "$p_{T}$ [GeV]" 
-    elif "v_eta" in dist: return "$\eta$" 
-    elif "v_phi" in dist: return "$\phi$" 
-    elif "v_lxy" in dist: return "min $L_{xy}$ [mm]" 
-    elif "v_z" in dist: return "$z$ [mm]" 
-    elif "v_m" in dist: return "mass [GeV]"
-    elif "v_life" in dist: return "lifetime, $\\tau$ [ns]"
-    return "" 
-
-def lifetime(txt):
-    # changes lifetime text to number
-    l=""
-    if "0p001"  in txt: l = "0.001"
-    elif "0p01" in txt: l = "0.01"
-    elif "0p1"  in txt: l = "0.1"
-    elif "1ns"  in txt: l = "1"
-    elif "10ns" in txt: l = "10"
-    elif "stable" in txt: l = "stable"
-    return l
-    
-def sampleLabel(s):
-    m = s.split("_")[0]
-    l = lifetime(s.split("_")[1])
-    label = "m={} GeV, $\\tau$={} ns".format(m,l) 
-    if "stable" in label : 
-        label = "m={} GeV, $\\tau$={}".format(m,l)
-    return label
-    
-def yscale(dist):
-    return "linear" 
-
-def get_bins(xvariable,outfile):
-    if "v_life" in outfile: 
-        bins = [ lifetime(x) for x in xvariable]
-    elif "v_mass" in outfile:
-        bins = [ x.split("_")[0] for x in xvariable]
-    else : 
-        bins = xvariable
-    return bins
 
 def get_efficiency(sample,selection):
     f = open('output/stau_{}.json'.format(sample)) 
@@ -77,22 +31,32 @@ def get_efficiency(sample,selection):
     return eff,err 
 
 def compare_effs(yvals,yerrs,xvariable,labels,outfile):
-    bins = get_bins(xvariable,outfile)
+    bins = get_bins(outfile,xvariable)
     plt.style.use('seaborn-colorblind')
+    plt.figure(figsize=(6,5.5))
 
     for i in range(0,len(yvals)):
         plt.errorbar( bins, yvals[i], yerrs[i], label=labels[i], marker = "o", alpha=0.5)
-        #plt.plot(xvariable, arrays[i],  label=labels[i])
-        #plt.hist(arrays[i], bins, histtype='step', label=labels[i])
 
-    plt.legend(loc='upper left')
+    plt.subplots_adjust(left=0.18, right=0.95, top=0.9, bottom=0.18)
+    plt.grid(visible=True, which='major', axis='both', color='gainsboro')
+
     plt.yscale(yscale(outfile))
-    plt.ylim(0.0,1.0)
-    plt.xlabel(xtitle(outfile))
-    plt.ylabel(ytitle(outfile))
+    plt.ylim(-0.05,1.05)
+   
+    size=20 
+    plt.xlabel(xtitle(outfile),fontsize=size, labelpad=size/2)
+    plt.ylabel(ytitle(outfile),fontsize=size, labelpad=size/2)
+    plt.xticks(fontsize=size-4)
+    plt.yticks(fontsize=size-4)
+    plt.title(title(outfile),fontsize=size-4)
+    plt.legend(loc=leg_loc(outfile),prop={'size':size-4,})
+    plt.yscale(yscale(outfile))
     plt.savefig(outfile)
     plt.clf()
+
     print(outfile)
+
     return
 
 def eff_array_samples(samples=["500_0p01ns","500_1ns","500_10ns"],pt=10,timeCut="None",tHit=50,tBS=200,zBS=50):
@@ -118,7 +82,7 @@ def compare_eff_pt(lifetime="stable"):
     samples_mass = ["100_"+lifetime,"300_"+lifetime,"500_"+lifetime,"700_"+lifetime,"1000_"+lifetime]
 
     pts=[10,20,50,100]
-    labels_pt  = ["pT > {} GeV".format(x) for x in pts]
+    labels_pt  = ["$p_{T}$"+" > {} GeV".format(x) for x in pts]
     timeCut="None"
 
     # stau mass x-axis
@@ -136,15 +100,22 @@ def compare_eff_delay(lifetime="stable"):
     # compares efficiencies for different masses or lifetimes
     samples_mass = ["100_"+lifetime,"300_"+lifetime,"500_"+lifetime,"700_"+lifetime,"1000_"+lifetime]
 
-    delays=["None","delay0.5","delay1.0","delay2.0"]
-    betas=["None","beta0.95","beta0.90","beta0.85"]
-    mtofs=["None","mass10","mass20","mass50"]
-    labels_delay  = ["delay > {} ns".format(x.strip("delay")) for x in delays]
-    labels_delay[0]="None"
-    labels_beta  = ["beta > {} ".format(x.strip("beta")) for x in betas]
-    labels_beta[0]="None"
-    labels_mtof  = ["mTOF > {} GeV".format(x.strip("mass")) for x in mtofs]
-    labels_mtof[0]="None"
+#track_sels.append("pt10;mass15")
+#track_sels.append("pt10;mass30")
+#track_sels.append("pt10;mass60")
+#track_sels.append("pt10;beta0.96")
+#track_sels.append("pt10;beta0.95")
+#track_sels.append("pt10;beta0.90")
+#track_sels.append("pt10;delay0.25")
+#track_sels.append("pt10;delay0.33")
+#track_sels.append("pt10;delay0.50")
+
+    delays=["delay0.25","delay0.33","delay0.50"]
+    betas =["beta0.96","beta0.95","beta0.90"]
+    mtofs =["mass15","mass30","mass60"]
+    labels_delay = ["delay > {} ns".format(x.strip("delay")) for x in delays]
+    labels_beta  = ["$\\beta_{TOF}$"+" < {} ".format(x.strip("beta")) for x in betas]
+    labels_mtof  = ["$m_{TOF}$"+" > {} GeV".format(x.strip("mass")) for x in mtofs]
     pt=10 
 
     # stau mass x-axis
