@@ -61,7 +61,7 @@ for m in range(len(file_list)):
     
 
   #Change this depending on test run or full run!
-  doTest = True 
+  doTest = False 
 
   with hep.open(infile) as f:
     
