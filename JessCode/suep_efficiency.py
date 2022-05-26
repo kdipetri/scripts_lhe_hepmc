@@ -1,219 +1,136 @@
 #!/usr/bin/env python
 
 import json
-import pyhepmc_ng as hep
 import numpy
-import math
-from datetime import datetime
+import matplotlib 
+matplotlib.use('pdf') # for speed? 
+import matplotlib.pyplot as plt
 
-file_list = ["/eos/user/k/kdipetri/Snowmass_SUEPs/mMed-125_mDark-1.0_temp-1.0.hepmc",
-            "/eos/user/k/kdipetri/Snowmass_SUEPs/mMed-200_mDark-1.0_temp-1.0.hepmc",
-            "/eos/user/k/kdipetri/Snowmass_SUEPs/mMed-400_mDark-1.0_temp-1.0.hepmc",
-            "/eos/user/k/kdipetri/Snowmass_SUEPs/mMed-600_mDark-1.0_temp-1.0.hepmc",
-            "/eos/user/k/kdipetri/Snowmass_SUEPs/mMed-800_mDark-1.0_temp-1.0.hepmc",
-            "/eos/user/k/kdipetri/Snowmass_SUEPs/mMed-1000_mDark-1.0_temp-1.0.hepmc"]
+f = open('SUEP_effieciencies.json',)
+data = json.load(f)
 
-charged_list = [1, 2, 3, 4, 5, 6, 7, 8, 11, 13, 15, 17, 24, 34, 37, 38, 1000011, 1000013,
-                1000015, 2000011, 2000013, 2000015, 2000024, 2000037, 211, 9000211, 100211, 
-                10211, 9010211, 213, 10213, 20213, 9000213, 100213, 9010213, 9020213, 30213, 
-                9030213, 9040213, 215, 10215, 9000215, 9010215, 217, 9000217, 9010217, 219, 
-                321, 9000321, 10321, 100321, 9010321, 9020321, 323, 10323, 20323, 100323, 
-                9000323, 30323, 325, 9000325, 10325, 20325, 9010325, 9020325, 327, 9010327, 329, 
-                9000329, 411, 10411, 413, 10413, 20413, 415, 431, 10431, 433, 10433, 20433, 435,
-                521, 10521, 523, 10523, 20523, 525, 541, 10541, 543, 10543, 20543, 545, 2224, 
-                2214, 1114, 3222, 3112, 3224, 3114, 3312, 3314, 3334, 4122, 4222, 4212, 4224, 
-                4214, 4232, 4322, 4324, 4412, 4422, 4414, 4424, 4432, 4434, 4444, 5112, 5222, 
-                5114, 5224, 5132, 5312, 5314, 5332, 5334, 5242, 5422, 5424, 5442, 5444, 5512, 
-                5514, 5532, 5534, 5554, 9221132, 9331122] 
+masses = [125, 200, 400, 600, 800, 1000]
+ntracks = [100, 150, 200]
+pts = [0.5, 1, 2]
 
 
+def get_bins(dist):
+    # start, stop, stepsize
+    if "compare_mass"   in dist: return masses 
+    if "compare_ntrack" in dist: return ntracks
+    if "compare_pt"     in dist: return pts
+    else : return np.arange(0, 3000, 100)
 
-efficiencies = []
-errors = []
-ht_05_tot = []
-ht_1_tot = []
-ht_2_tot = []
+def leg_loc(dist):
+    return "upper right"
 
-for m in range(len(file_list)):
-  infile = file_list[m]
-  
-  pass_05_100 = 0
-  pass_05_150 = 0
-  pass_05_200 = 0
-  pass_1_100 = 0
-  pass_1_150 = 0 
-  pass_1_200 = 0
-  pass_2_100 = 0
-  pass_2_150 = 0
-  pass_2_200 = 0
-  event_count = 0
-  ht_05 = []
-  ht_1 = []
-  ht_2 = []
+def xlabel(dist):
+    if   "compare_mass"   in dist: return "Mediator Mass $m_{\\Phi}$ (GeV)"
+    elif "compare_ntrack" in dist: return "$n_{\\mathsf{Track}}$"
+    elif "compare_pt"     in dist: return "$p_{\mathsf{T}}$ (GeV)"
+    else : return ""
 
-  #Change this depending on test run or full run!
-  doTest = False
+def ylabel(dist):
+    return "Efficiency"
 
-  with hep.open(infile) as f:
+def compare_effs(yvals,yerrs,labels,title,outfile):
+    print(outfile)
+
+    bins = get_bins(outfile)
+    plt.style.use('seaborn-colorblind')
+    plt.figure(figsize=(6,5.5))
+
+    for i in range(0,len(yvals)):
+        plt.errorbar( bins, yvals[i], yerrs[i], label=labels[i], marker = "o", alpha=0.5)
+
+    plt.subplots_adjust(left=0.18, right=0.95, top=0.9, bottom=0.18)
+    plt.grid(visible=True, which='major', axis='both', color='gainsboro')
+
+    #plt.yscale(yscale(outfile))
+    plt.ylim(-0.05,1.05)
+
+    ax = plt.axes()
+    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+    ax.yaxis.set_major_locator(plt.MaxNLocator(5))
+   
+    size=20 
     
-    while True:
-      evt = f.read()
-      if not evt: 
-        break
-      if doTest and evt.event_number > 100:  
-        break
+    plt.xlabel(xlabel(outfile), fontsize=size, labelpad=size/2)
+    plt.ylabel(ylabel(outfile), fontsize=size, labelpad=size/2)
+    plt.xticks(fontsize=size-4)
+    plt.yticks(fontsize=size-4)
+    plt.title(title,fontsize=size-4)
+    plt.legend(loc=leg_loc(outfile),prop={'size':size-4,})
 
-      cutoff1_count = 0
-      cutoff2_count = 0
-      cutoff3_count = 0
-      event_count += 1
-      ht_05_event = 0
-      ht_1_event = 0
-      ht_2_event = 0
+    plt.savefig(outfile)
+    plt.clf()
+    return
 
-
-      if evt.event_number % 1000 == 0:
-        now = datetime.now()
-        current_time = now.strftime("%H:%M:%S")
-        print("Current time is:", current_time, " On file:", m+1, " Event:", evt.event_number)
-
-      for particle in evt.particles:
-        check = False
-        for i in range(len(charged_list)):
-          if abs(particle.pid) == charged_list[i]:
-            check = True
-
-        eta_check = False
-        if abs(particle.momentum.eta()) < 2.5:
-          eta_check = True
-
-        if particle.status == 1 and check == True and eta_check == True:
-          p_T = numpy.sqrt(numpy.square(particle.momentum.px) + numpy.square(particle.momentum.py))
-          tot_mom = numpy.sqrt(numpy.square(particle.momentum.px) + numpy.square(particle.momentum.py) + numpy.square(particle.momentum.pz))
-          if p_T > 0.5:
-            cutoff1_count += 1
-            ht_05_event += tot_mom
-          if p_T > 1:
-            cutoff2_count += 1
-            ht_1_event += tot_mom
-          if p_T > 2:
-            cutoff3_count += 1
-            ht_2_event += tot_mom
-
-      ht_05.append(ht_05_event)
-      ht_1.append(ht_1_event)
-      ht_2.append(ht_2_event)
-
-      if cutoff1_count > 100:
-          pass_05_100 += 1
-          if cutoff1_count > 150:
-              pass_05_150 += 1
-              if cutoff1_count > 200:
-                  pass_05_200 += 1    
-
-      if cutoff2_count > 100:
-          pass_1_100 += 1
-          if cutoff2_count > 150:
-              pass_1_150 += 1
-              if cutoff2_count > 200:
-                  pass_1_200 += 1  
-
-      if cutoff3_count > 100:
-          pass_2_100 += 1
-          if cutoff3_count > 150:
-              pass_2_150 += 1
-              if cutoff3_count > 200:
-                  pass_2_200 += 1
+# efficiencies are of the format
+#    "data": [
+#        {"cut": "125_pt05_n100", "efficiency": efficiencies[0][0], "error" : errors[0][0]},
+# err_n100_125 = [data["data"][0]["error"], data["data"][3]["error"], data["data"][6]["error"]]
 
 
+def get_cut_index(mass=125,n=100,pt=0.5):
+    i = masses.index(mass)
+    j = pts.index(pt)
+    k = ntracks.index(n)
+    cut = i*9 + j*3 + k
+    return cut
 
-  efficiencies.append([pass_05_100 / event_count, pass_05_150 / event_count, pass_05_200 /event_count, 
-              pass_1_100 / event_count, pass_1_150 / event_count, pass_1_200 / event_count, 
-              pass_2_100 /event_count, pass_2_150 /event_count, pass_2_200 / event_count])
+def get_efficiency(mass=125,n=100,pt=0.5):
 
-  errors.append([math.sqrt((pass_05_100 / event_count)*(1- (pass_05_100 / event_count)) / event_count),
-                 math.sqrt((pass_05_150 / event_count)*(1- (pass_05_150 / event_count)) / event_count),
-                 math.sqrt((pass_05_200 / event_count)*(1- (pass_05_200 / event_count)) / event_count),
-                 math.sqrt((pass_1_100 / event_count)*(1- (pass_1_100 / event_count)) / event_count),
-                 math.sqrt((pass_1_150 / event_count)*(1- (pass_1_150 / event_count)) / event_count),
-                 math.sqrt((pass_1_200 / event_count)*(1- (pass_1_200 / event_count)) / event_count),
-                 math.sqrt((pass_2_100 / event_count)*(1- (pass_2_100 / event_count)) / event_count),
-                 math.sqrt((pass_2_150 / event_count)*(1- (pass_2_150 / event_count)) / event_count),
-                 math.sqrt((pass_2_200 / event_count)*(1- (pass_2_200 / event_count)) / event_count),])
+    i = get_cut_index(mass,n,pt)
+    cut = data["data"][i]["cut"]
+    eff = data["data"][i]["efficiency"]
+    err = data["data"][i]["error"]
+    print(cut,eff,err)
+    return eff,err 
 
-  ht_05_tot.append(ht_05)
-  ht_1_tot.append(ht_1)
-  ht_2_tot.append(ht_2)
+def get_eff_array(masses=[],ntracks=[],pts=[]):
 
-
-data = {
-    "ht": [
-        {"mass": "125", "ht_05": ht_05_tot[0], "ht_1": ht_1_tot[0], "ht_2": ht_2_tot[0]},
-        {"mass": "200", "ht_05": ht_05_tot[1], "ht_1": ht_1_tot[1], "ht_2": ht_2_tot[1]},
-        {"mass": "400", "ht_05": ht_05_tot[2], "ht_1": ht_1_tot[2], "ht_2": ht_2_tot[2]},
-        {"mass": "600", "ht_05": ht_05_tot[3], "ht_1": ht_1_tot[3], "ht_2": ht_2_tot[3]},
-        {"mass": "800", "ht_05": ht_05_tot[4], "ht_1": ht_1_tot[4], "ht_2": ht_2_tot[4]},
-        {"mass": "100", "ht_05": ht_05_tot[5], "ht_1": ht_1_tot[5], "ht_2": ht_2_tot[5]}],
-    "data": [
-        {"cut": "125_pt05_n100", "efficiency": efficiencies[0][0], "error" : errors[0][0]},
-        {"cut": "125_pt05_n150", "efficiency": efficiencies[0][1], "error" : errors[0][1]},
-        {"cut": "125_pt05_n200", "efficiency": efficiencies[0][2], "error" : errors[0][2]},
-        {"cut": "125_pt1_n100", "efficiency": efficiencies[0][3], "error" : errors[0][3]},
-        {"cut": "125_pt1_n150", "efficiency": efficiencies[0][4], "error" : errors[0][4]},
-        {"cut": "125_pt1_n200", "efficiency": efficiencies[0][5], "error" : errors[0][5]},
-        {"cut": "125_pt2_n100", "efficiency": efficiencies[0][6], "error" : errors[0][6]},
-        {"cut": "125_pt2_n150", "efficiency": efficiencies[0][7], "error" : errors[0][7]},
-        {"cut": "125_pt2_n200", "efficiency": efficiencies[0][8], "error" : errors[0][8]},
-        {"cut": "200_pt05_n100", "efficiency": efficiencies[1][0], "error" : errors[1][0]},
-        {"cut": "200_pt05_n150", "efficiency": efficiencies[1][1], "error" : errors[1][1]},
-        {"cut": "200_pt05_n200", "efficiency": efficiencies[1][2], "error" : errors[1][2]},
-        {"cut": "200_pt1_n100", "efficiency": efficiencies[1][3], "error" : errors[1][3]},
-        {"cut": "200_pt1_n150", "efficiency": efficiencies[1][4], "error" : errors[1][4]},
-        {"cut": "200_pt1_n200", "efficiency": efficiencies[1][5], "error" : errors[1][5]},
-        {"cut": "200_pt2_n100", "efficiency": efficiencies[1][6], "error" : errors[1][6]},
-        {"cut": "200_pt2_n150", "efficiency": efficiencies[1][7], "error" : errors[1][7]},
-        {"cut": "200_pt2_n200", "efficiency": efficiencies[1][8], "error" : errors[1][8]},
-        {"cut": "400_pt05_n100", "efficiency": efficiencies[2][0], "error" : errors[2][0]},
-        {"cut": "400_pt05_n150", "efficiency": efficiencies[2][1], "error" : errors[2][1]},
-        {"cut": "400_pt05_n200", "efficiency": efficiencies[2][2], "error" : errors[2][2]},
-        {"cut": "400_pt1_n100", "efficiency": efficiencies[2][3], "error" : errors[2][3]},
-        {"cut": "400_pt1_n150", "efficiency": efficiencies[2][4], "error" : errors[2][4]},
-        {"cut": "400_pt1_n200", "efficiency": efficiencies[2][5], "error" : errors[2][5]},
-        {"cut": "400_pt2_n100", "efficiency": efficiencies[2][6], "error" : errors[2][6]},
-        {"cut": "400_pt2_n150", "efficiency": efficiencies[2][7], "error" : errors[2][7]},
-        {"cut": "400_pt2_n200", "efficiency": efficiencies[2][8], "error" : errors[2][8]},
-        {"cut": "600_pt05_n100", "efficiency": efficiencies[3][0], "error" : errors[3][0]},
-        {"cut": "600_pt05_n150", "efficiency": efficiencies[3][1], "error" : errors[3][1]},
-        {"cut": "600_pt05_n200", "efficiency": efficiencies[3][2], "error" : errors[3][2]},
-        {"cut": "600_pt1_n100", "efficiency": efficiencies[3][3], "error" : errors[3][3]},
-        {"cut": "600_pt1_n150", "efficiency": efficiencies[3][4], "error" : errors[3][4]},
-        {"cut": "600_pt1_n200", "efficiency": efficiencies[3][5], "error" : errors[3][5]},
-        {"cut": "600_pt2_n100", "efficiency": efficiencies[3][6], "error" : errors[3][6]},
-        {"cut": "600_pt2_n150", "efficiency": efficiencies[3][7], "error" : errors[3][7]},
-        {"cut": "600_pt2_n200", "efficiency": efficiencies[3][8], "error" : errors[3][8]},
-        {"cut": "800_pt05_n100", "efficiency": efficiencies[4][0], "error" : errors[4][0]},
-        {"cut": "800_pt05_n150", "efficiency": efficiencies[4][1], "error" : errors[4][1]},
-        {"cut": "800_pt05_n200", "efficiency": efficiencies[4][2], "error" : errors[4][2]},
-        {"cut": "800_pt1_n100", "efficiency": efficiencies[4][3], "error" : errors[4][3]},
-        {"cut": "800_pt1_n150", "efficiency": efficiencies[4][4], "error" : errors[4][4]},
-        {"cut": "800_pt1_n200", "efficiency": efficiencies[4][5], "error" : errors[4][5]},
-        {"cut": "800_pt2_n100", "efficiency": efficiencies[4][6], "error" : errors[4][6]},
-        {"cut": "800_pt2_n150", "efficiency": efficiencies[4][7], "error" : errors[4][7]},
-        {"cut": "800_pt2_n200", "efficiency": efficiencies[4][8], "error" : errors[4][8]},
-        {"cut": "1000_pt05_n100", "efficiency": efficiencies[5][0], "error" : errors[5][0]},
-        {"cut": "1000_pt05_n150", "efficiency": efficiencies[5][1], "error" : errors[5][1]},
-        {"cut": "1000_pt05_n200", "efficiency": efficiencies[5][2], "error" : errors[5][2]},
-        {"cut": "1000_pt1_n100", "efficiency": efficiencies[5][3], "error" : errors[5][3]},
-        {"cut": "1000_pt1_n150", "efficiency": efficiencies[5][4], "error" : errors[5][4]},
-        {"cut": "1000_pt1_n200", "efficiency": efficiencies[5][5], "error" : errors[5][5]},
-        {"cut": "1000_pt2_n100", "efficiency": efficiencies[5][6], "error" : errors[5][6]},
-        {"cut": "1000_pt2_n150", "efficiency": efficiencies[5][7], "error" : errors[5][7]},
-        {"cut": "1000_pt2_n200", "efficiency": efficiencies[5][8], "error" : errors[5][8]}]}
-        
-
-with open('SUEP_effieciencies.json', 'w') as fp:
-    json.dump(data, fp)
+    # returns an array of efficiency 
+    # v. mass , ntracks, or pt
+    eff_array = []
+    err_array = []
+    if len(masses)>1:
+        for mass in masses:
+            eff,err = get_efficiency(mass,ntracks[0],pts[0])
+            eff_array.append( eff )
+            err_array.append( err )
+    if len(ntracks)>1:
+        for ntrack in ntracks:
+            eff,err = get_efficiency(mass[0],ntrack,pts[0])
+            eff_array.append( eff )
+            err_array.append( err )
+    if len(pts)>1:
+        for pt in pts:
+            eff,err = get_efficiency(mass[0],ntracks[0],pt)
+            eff_array.append( eff )
+            err_array.append( err )
     
+    return eff_array,err_array
+
+# compare efficiency: x-axis mass, legend nTracks, fixed pT 
+def compare_mass_ntracks_pt(pt=0.5):
     
+    eff_arrays=[]
+    err_arrays=[]
+    labels=[]
+    title="track $p_{\\mathsf{T}}$ >"+" {} GeV".format(pt)
+    outfile = "plots/effs/compare_mass_ntracks_pt{}.pdf".format( "05" if pt==0.5 else pt )
+    
+    for ntrack in ntracks:
+        eff_array,err_array = get_eff_array(masses,[ntrack],[pt])
+        eff_arrays.append(eff_array)
+        err_arrays.append(err_array)
+        labels.append("$n_{\\mathsf{Tracks}}$"+" > {}".format(ntrack))
+
+    compare_effs(eff_arrays,err_arrays,labels,title,outfile)
+    return 
 
 
+compare_mass_ntracks_pt(0.5)
+compare_mass_ntracks_pt(1)
+compare_mass_ntracks_pt(2)
