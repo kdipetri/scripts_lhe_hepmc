@@ -30,9 +30,13 @@ charged_list = [1, 2, 3, 4, 5, 6, 7, 8, 11, 13, 15, 17, 24, 34, 37, 38, 1000011,
 
 efficiencies = []
 errors = []
-ht_05_tot = []
-ht_1_tot = []
-ht_2_tot = []
+ht_05_tot = [] # ht with pT > 0.5 threshold
+ht_1_tot  = [] # ht with pT > 1 threshold
+ht_2_tot  = [] # ht with pT > 2 threshold
+nTrack_05_tot = [] # nTracks with pT > 0.5 threshold
+nTrack_1_tot = [] # nTracks with pT > 1.0 threshold
+nTrack_2_tot = [] # nTracks with pT > 2.0 threshold
+pt_tot = [] 
 
 for m in range(len(file_list)):
   infile = file_list[m]
@@ -50,9 +54,14 @@ for m in range(len(file_list)):
   ht_05 = []
   ht_1 = []
   ht_2 = []
+  pt = []
+  nTrack_05 = []
+  nTrack_1  = []
+  nTrack_2  = []
+    
 
   #Change this depending on test run or full run!
-  doTest = False
+  doTest = False 
 
   with hep.open(infile) as f:
     
@@ -60,7 +69,7 @@ for m in range(len(file_list)):
       evt = f.read()
       if not evt: 
         break
-      if doTest and evt.event_number > 100:  
+      if doTest and evt.event_number > 1000:  
         break
 
       cutoff1_count = 0
@@ -100,9 +109,16 @@ for m in range(len(file_list)):
             cutoff3_count += 1
             ht_2_event += tot_mom
 
-      ht_05.append(ht_05_event)
+          pt.append(p_T) # fill per track
+
+      ht_05.append(ht_05_event) # fill per event
       ht_1.append(ht_1_event)
       ht_2.append(ht_2_event)
+
+      nTrack_05.append(cutoff1_count)
+      nTrack_1.append(cutoff2_count)
+      nTrack_2.append(cutoff3_count)
+
 
       if cutoff1_count > 100:
           pass_05_100 += 1
@@ -145,70 +161,90 @@ for m in range(len(file_list)):
   ht_1_tot.append(ht_1)
   ht_2_tot.append(ht_2)
 
+  nTrack_05_tot.append(nTrack_05)
+  nTrack_1_tot.append(nTrack_1)
+  nTrack_2_tot.append(nTrack_2)
+
+  pt_tot.append(pt)
+
 
 data = {
+    "trackPt" : [
+        {"mass": "125" , "pt": pt_tot[0] },
+        {"mass": "200" , "pt": pt_tot[1] },
+        {"mass": "400" , "pt": pt_tot[2] },
+        {"mass": "600" , "pt": pt_tot[3] },
+        {"mass": "800" , "pt": pt_tot[4] },
+        {"mass": "1000", "pt": pt_tot[5] }],
+    "nTrack" : [
+        {"mass": "125" , "nTrack_05": nTrack_05_tot[0], "nTrack_1": nTrack_1_tot[0], "nTrack_2": nTrack_2_tot[0]},
+        {"mass": "200" , "nTrack_05": nTrack_05_tot[1], "nTrack_1": nTrack_1_tot[1], "nTrack_2": nTrack_2_tot[1]},
+        {"mass": "400" , "nTrack_05": nTrack_05_tot[2], "nTrack_1": nTrack_1_tot[2], "nTrack_2": nTrack_2_tot[2]},
+        {"mass": "600" , "nTrack_05": nTrack_05_tot[3], "nTrack_1": nTrack_1_tot[3], "nTrack_2": nTrack_2_tot[3]},
+        {"mass": "800" , "nTrack_05": nTrack_05_tot[4], "nTrack_1": nTrack_1_tot[4], "nTrack_2": nTrack_2_tot[4]},
+        {"mass": "1000", "nTrack_05": nTrack_05_tot[5], "nTrack_1": nTrack_1_tot[5], "nTrack_2": nTrack_2_tot[5]}],
     "ht": [
-        {"mass": "125", "ht_05": ht_05_tot[0], "ht_1": ht_1_tot[0], "ht_2": ht_2_tot[0]},
-        {"mass": "200", "ht_05": ht_05_tot[1], "ht_1": ht_1_tot[1], "ht_2": ht_2_tot[1]},
-        {"mass": "400", "ht_05": ht_05_tot[2], "ht_1": ht_1_tot[2], "ht_2": ht_2_tot[2]},
-        {"mass": "600", "ht_05": ht_05_tot[3], "ht_1": ht_1_tot[3], "ht_2": ht_2_tot[3]},
-        {"mass": "800", "ht_05": ht_05_tot[4], "ht_1": ht_1_tot[4], "ht_2": ht_2_tot[4]},
-        {"mass": "100", "ht_05": ht_05_tot[5], "ht_1": ht_1_tot[5], "ht_2": ht_2_tot[5]}],
+        {"mass": "125" , "ht_05": ht_05_tot[0], "ht_1": ht_1_tot[0], "ht_2": ht_2_tot[0]},
+        {"mass": "200" , "ht_05": ht_05_tot[1], "ht_1": ht_1_tot[1], "ht_2": ht_2_tot[1]},
+        {"mass": "400" , "ht_05": ht_05_tot[2], "ht_1": ht_1_tot[2], "ht_2": ht_2_tot[2]},
+        {"mass": "600" , "ht_05": ht_05_tot[3], "ht_1": ht_1_tot[3], "ht_2": ht_2_tot[3]},
+        {"mass": "800" , "ht_05": ht_05_tot[4], "ht_1": ht_1_tot[4], "ht_2": ht_2_tot[4]},
+        {"mass": "1000", "ht_05": ht_05_tot[5], "ht_1": ht_1_tot[5], "ht_2": ht_2_tot[5]}],
     "data": [
         {"cut": "125_pt05_n100", "efficiency": efficiencies[0][0], "error" : errors[0][0]},
         {"cut": "125_pt05_n150", "efficiency": efficiencies[0][1], "error" : errors[0][1]},
         {"cut": "125_pt05_n200", "efficiency": efficiencies[0][2], "error" : errors[0][2]},
-        {"cut": "125_pt1_n100", "efficiency": efficiencies[0][3], "error" : errors[0][3]},
-        {"cut": "125_pt1_n150", "efficiency": efficiencies[0][4], "error" : errors[0][4]},
-        {"cut": "125_pt1_n200", "efficiency": efficiencies[0][5], "error" : errors[0][5]},
-        {"cut": "125_pt2_n100", "efficiency": efficiencies[0][6], "error" : errors[0][6]},
-        {"cut": "125_pt2_n150", "efficiency": efficiencies[0][7], "error" : errors[0][7]},
-        {"cut": "125_pt2_n200", "efficiency": efficiencies[0][8], "error" : errors[0][8]},
+        {"cut": "125_pt1_n100" , "efficiency": efficiencies[0][3], "error" : errors[0][3]},
+        {"cut": "125_pt1_n150" , "efficiency": efficiencies[0][4], "error" : errors[0][4]},
+        {"cut": "125_pt1_n200" , "efficiency": efficiencies[0][5], "error" : errors[0][5]},
+        {"cut": "125_pt2_n100" , "efficiency": efficiencies[0][6], "error" : errors[0][6]},
+        {"cut": "125_pt2_n150" , "efficiency": efficiencies[0][7], "error" : errors[0][7]},
+        {"cut": "125_pt2_n200" , "efficiency": efficiencies[0][8], "error" : errors[0][8]},
         {"cut": "200_pt05_n100", "efficiency": efficiencies[1][0], "error" : errors[1][0]},
         {"cut": "200_pt05_n150", "efficiency": efficiencies[1][1], "error" : errors[1][1]},
         {"cut": "200_pt05_n200", "efficiency": efficiencies[1][2], "error" : errors[1][2]},
-        {"cut": "200_pt1_n100", "efficiency": efficiencies[1][3], "error" : errors[1][3]},
-        {"cut": "200_pt1_n150", "efficiency": efficiencies[1][4], "error" : errors[1][4]},
-        {"cut": "200_pt1_n200", "efficiency": efficiencies[1][5], "error" : errors[1][5]},
-        {"cut": "200_pt2_n100", "efficiency": efficiencies[1][6], "error" : errors[1][6]},
-        {"cut": "200_pt2_n150", "efficiency": efficiencies[1][7], "error" : errors[1][7]},
-        {"cut": "200_pt2_n200", "efficiency": efficiencies[1][8], "error" : errors[1][8]},
+        {"cut": "200_pt1_n100" , "efficiency": efficiencies[1][3], "error" : errors[1][3]},
+        {"cut": "200_pt1_n150" , "efficiency": efficiencies[1][4], "error" : errors[1][4]},
+        {"cut": "200_pt1_n200" , "efficiency": efficiencies[1][5], "error" : errors[1][5]},
+        {"cut": "200_pt2_n100" , "efficiency": efficiencies[1][6], "error" : errors[1][6]},
+        {"cut": "200_pt2_n150" , "efficiency": efficiencies[1][7], "error" : errors[1][7]},
+        {"cut": "200_pt2_n200" , "efficiency": efficiencies[1][8], "error" : errors[1][8]},
         {"cut": "400_pt05_n100", "efficiency": efficiencies[2][0], "error" : errors[2][0]},
         {"cut": "400_pt05_n150", "efficiency": efficiencies[2][1], "error" : errors[2][1]},
         {"cut": "400_pt05_n200", "efficiency": efficiencies[2][2], "error" : errors[2][2]},
-        {"cut": "400_pt1_n100", "efficiency": efficiencies[2][3], "error" : errors[2][3]},
-        {"cut": "400_pt1_n150", "efficiency": efficiencies[2][4], "error" : errors[2][4]},
-        {"cut": "400_pt1_n200", "efficiency": efficiencies[2][5], "error" : errors[2][5]},
-        {"cut": "400_pt2_n100", "efficiency": efficiencies[2][6], "error" : errors[2][6]},
-        {"cut": "400_pt2_n150", "efficiency": efficiencies[2][7], "error" : errors[2][7]},
-        {"cut": "400_pt2_n200", "efficiency": efficiencies[2][8], "error" : errors[2][8]},
+        {"cut": "400_pt1_n100" , "efficiency": efficiencies[2][3], "error" : errors[2][3]},
+        {"cut": "400_pt1_n150" , "efficiency": efficiencies[2][4], "error" : errors[2][4]},
+        {"cut": "400_pt1_n200" , "efficiency": efficiencies[2][5], "error" : errors[2][5]},
+        {"cut": "400_pt2_n100" , "efficiency": efficiencies[2][6], "error" : errors[2][6]},
+        {"cut": "400_pt2_n150" , "efficiency": efficiencies[2][7], "error" : errors[2][7]},
+        {"cut": "400_pt2_n200" , "efficiency": efficiencies[2][8], "error" : errors[2][8]},
         {"cut": "600_pt05_n100", "efficiency": efficiencies[3][0], "error" : errors[3][0]},
         {"cut": "600_pt05_n150", "efficiency": efficiencies[3][1], "error" : errors[3][1]},
         {"cut": "600_pt05_n200", "efficiency": efficiencies[3][2], "error" : errors[3][2]},
-        {"cut": "600_pt1_n100", "efficiency": efficiencies[3][3], "error" : errors[3][3]},
-        {"cut": "600_pt1_n150", "efficiency": efficiencies[3][4], "error" : errors[3][4]},
-        {"cut": "600_pt1_n200", "efficiency": efficiencies[3][5], "error" : errors[3][5]},
-        {"cut": "600_pt2_n100", "efficiency": efficiencies[3][6], "error" : errors[3][6]},
-        {"cut": "600_pt2_n150", "efficiency": efficiencies[3][7], "error" : errors[3][7]},
-        {"cut": "600_pt2_n200", "efficiency": efficiencies[3][8], "error" : errors[3][8]},
+        {"cut": "600_pt1_n100" , "efficiency": efficiencies[3][3], "error" : errors[3][3]},
+        {"cut": "600_pt1_n150" , "efficiency": efficiencies[3][4], "error" : errors[3][4]},
+        {"cut": "600_pt1_n200" , "efficiency": efficiencies[3][5], "error" : errors[3][5]},
+        {"cut": "600_pt2_n100" , "efficiency": efficiencies[3][6], "error" : errors[3][6]},
+        {"cut": "600_pt2_n150" , "efficiency": efficiencies[3][7], "error" : errors[3][7]},
+        {"cut": "600_pt2_n200" , "efficiency": efficiencies[3][8], "error" : errors[3][8]},
         {"cut": "800_pt05_n100", "efficiency": efficiencies[4][0], "error" : errors[4][0]},
         {"cut": "800_pt05_n150", "efficiency": efficiencies[4][1], "error" : errors[4][1]},
         {"cut": "800_pt05_n200", "efficiency": efficiencies[4][2], "error" : errors[4][2]},
-        {"cut": "800_pt1_n100", "efficiency": efficiencies[4][3], "error" : errors[4][3]},
-        {"cut": "800_pt1_n150", "efficiency": efficiencies[4][4], "error" : errors[4][4]},
-        {"cut": "800_pt1_n200", "efficiency": efficiencies[4][5], "error" : errors[4][5]},
-        {"cut": "800_pt2_n100", "efficiency": efficiencies[4][6], "error" : errors[4][6]},
-        {"cut": "800_pt2_n150", "efficiency": efficiencies[4][7], "error" : errors[4][7]},
-        {"cut": "800_pt2_n200", "efficiency": efficiencies[4][8], "error" : errors[4][8]},
+        {"cut": "800_pt1_n100" , "efficiency": efficiencies[4][3], "error" : errors[4][3]},
+        {"cut": "800_pt1_n150" , "efficiency": efficiencies[4][4], "error" : errors[4][4]},
+        {"cut": "800_pt1_n200" , "efficiency": efficiencies[4][5], "error" : errors[4][5]},
+        {"cut": "800_pt2_n100" , "efficiency": efficiencies[4][6], "error" : errors[4][6]},
+        {"cut": "800_pt2_n150" , "efficiency": efficiencies[4][7], "error" : errors[4][7]},
+        {"cut": "800_pt2_n200" , "efficiency": efficiencies[4][8], "error" : errors[4][8]},
         {"cut": "1000_pt05_n100", "efficiency": efficiencies[5][0], "error" : errors[5][0]},
         {"cut": "1000_pt05_n150", "efficiency": efficiencies[5][1], "error" : errors[5][1]},
         {"cut": "1000_pt05_n200", "efficiency": efficiencies[5][2], "error" : errors[5][2]},
-        {"cut": "1000_pt1_n100", "efficiency": efficiencies[5][3], "error" : errors[5][3]},
-        {"cut": "1000_pt1_n150", "efficiency": efficiencies[5][4], "error" : errors[5][4]},
-        {"cut": "1000_pt1_n200", "efficiency": efficiencies[5][5], "error" : errors[5][5]},
-        {"cut": "1000_pt2_n100", "efficiency": efficiencies[5][6], "error" : errors[5][6]},
-        {"cut": "1000_pt2_n150", "efficiency": efficiencies[5][7], "error" : errors[5][7]},
-        {"cut": "1000_pt2_n200", "efficiency": efficiencies[5][8], "error" : errors[5][8]}]}
+        {"cut": "1000_pt1_n100" , "efficiency": efficiencies[5][3], "error" : errors[5][3]},
+        {"cut": "1000_pt1_n150" , "efficiency": efficiencies[5][4], "error" : errors[5][4]},
+        {"cut": "1000_pt1_n200" , "efficiency": efficiencies[5][5], "error" : errors[5][5]},
+        {"cut": "1000_pt2_n100" , "efficiency": efficiencies[5][6], "error" : errors[5][6]},
+        {"cut": "1000_pt2_n150" , "efficiency": efficiencies[5][7], "error" : errors[5][7]},
+        {"cut": "1000_pt2_n200" , "efficiency": efficiencies[5][8], "error" : errors[5][8]}]}
         
 
 with open('SUEP_effieciencies.json', 'w') as fp:
