@@ -22,6 +22,9 @@ def get_bins(dist):
     else : return np.arange(0, 3000, 100)
 
 def leg_loc(dist):
+    if "pt1" in dist: return "upper left"
+    if "pt2" in dist: return "upper left"
+    if "pt05" in dist: return "lower right"
     return "upper right"
 
 def xlabel(dist):

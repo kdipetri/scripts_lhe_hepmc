@@ -21,6 +21,7 @@ def leg_loc(dist):
     if "v_mass_for_eta" in dist: return "upper right"
     if "_hit_beta_" in dist : return "upper left"
     if "_hit" in dist : return "upper right"
+    if "_pt" in dist: return "upper right"
     else : return "upper left"
 
 def ytitle(dist):
@@ -90,7 +91,7 @@ def get_bins(outfile,xvariable=[]):
     elif "_hit_invBeta" in dist: return np.linspace(0,5,50) 
     elif "_hit_invBetaRes" in dist: return np.linspace(-10,10,50) 
     elif "_hit_mass"       in dist: return np.linspace(0,1200,60) 
-    elif "_pt"  in dist: return np.linspace(0,1000,50)
+    elif "_pt"  in dist: return np.linspace(0,1500,50)
     elif "_eta" in dist: return np.linspace(-5,5,50)
     elif "_phi" in dist: return np.linspace(-4,4,40)
     elif "_lxy" in dist: return np.linspace(0,1500,60)

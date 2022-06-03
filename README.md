@@ -21,6 +21,9 @@ source pythonenv/bin/activate
 pip install pyhepmc-ng 
 pip install matplotlib
 pip install numpy
+pip install scipy
+pip install uproot4
+pip install pandas
 ```
 
 You'll get a message saying `pip` needs to be updated - ignore it, we don't have permissions to update pip on lxplus. You need to source the activate script every time you log in, but nothing else, since your virtual env will keep everything you installed.  

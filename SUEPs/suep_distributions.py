@@ -17,17 +17,17 @@ pTs     = ["05", "1", "2"]
 
 def get_bins(dist):
     # start, stop, stepsize
-    if "compare_ht"     in dist: return np.arange(0, 2000, 100)
+    if "compare_ht"     in dist: return np.arange(0, 2000, 50)
     if "compare_nTrack" in dist: 
         xmax=800
         nbins=50
-        if   "mass200" in dist : xmax= 300
-        elif "mass800" in dist : xmax= 600
-        elif "pt05"    in dist : xmax= 800
-        elif "pt1"     in dist : xmax= 500
-        elif "pt2"     in dist : xmax= 300 
+        if   "mass200" in dist : xmax= 250
+        elif "mass800" in dist : xmax= 500
+        elif "pt05"    in dist : xmax= 500
+        elif "pt1"     in dist : xmax= 300
+        elif "pt2"     in dist : xmax= 100 
         return np.arange(0, xmax, float(xmax)/nbins)
-    if "compare_pt" in dist: return np.arange(0,20,0.5)
+    if "compare_pt" in dist: return np.arange(0,6,0.1)
     else : return np.arange(0, 3000, 100)
 
 def leg_loc(dist):
@@ -44,8 +44,15 @@ def ylabel(dist):
     else : return "Events (AU)"
 
 def yscale(dist):
-    if "compare_pt" in dist: return "log"
-    else : return "linear"
+    #if "compare_pt" in dist: return "log"
+    #else : return "linear"
+    return "linear"
+
+def ymax(dist):
+    if "compare_pt" in dist: return 0.12
+    elif "compare_nTrack_for_diffmass" in dist: return 0.23
+    #elif "compare_ht" in dist: return 0.5
+    else : return -1
 
 def compare1D(arrays,labels,title,outfile,norm=0):
 
@@ -64,11 +71,12 @@ def compare1D(arrays,labels,title,outfile,norm=0):
     plt.grid(visible=True, which='major', axis='both', color='gainsboro')
 
     plt.yscale(yscale(outfile))
+    if ymax(outfile) != -1: plt.ylim(0,ymax(outfile))
     #plt.ylim(-0.05,1.05)
 
     ax = plt.axes()
-    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
-    ax.yaxis.set_major_locator(plt.MaxNLocator(5))
+    ax.xaxis.set_major_locator(plt.MaxNLocator(6))
+    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
    
     size=20 
     
@@ -77,7 +85,10 @@ def compare1D(arrays,labels,title,outfile,norm=0):
     plt.xticks(fontsize=size-4)
     plt.yticks(fontsize=size-4)
     plt.title(title,fontsize=size-4)
-    plt.legend(loc=leg_loc(outfile),prop={'size':size-4,})
+
+    if len(arrays) > 4 and "compare_nT" in outfile : 
+        plt.legend(loc=leg_loc(outfile),prop={'size':size-4,}, ncol=2, borderpad=0.2, handlelength=1, handletextpad=0.5, columnspacing=0.8)
+    else : plt.legend(loc=leg_loc(outfile),prop={'size':size-4,}, handlelength=1)
 
     plt.savefig(outfile)
     plt.clf()
