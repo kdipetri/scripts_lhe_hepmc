@@ -121,19 +121,41 @@ def compare_mass_ntracks_pt(pt=0.5):
     eff_arrays=[]
     err_arrays=[]
     labels=[]
-    title="track $p_{\\mathsf{T}}$ >"+" {} GeV".format(pt)
+    title="$p_{\\mathsf{T}}$ >"+" {} GeV".format(pt)
     outfile = "plots/effs/compare_mass_ntracks_pt{}.pdf".format( "05" if pt==0.5 else pt )
     
     for ntrack in ntracks:
         eff_array,err_array = get_eff_array(masses,[ntrack],[pt])
         eff_arrays.append(eff_array)
         err_arrays.append(err_array)
-        labels.append("$n_{\\mathsf{Tracks}}$"+" > {}".format(ntrack))
+        labels.append("$n_{\\mathsf{Track}}$"+" > {}".format(ntrack))
 
     compare_effs(eff_arrays,err_arrays,labels,title,outfile)
     return 
 
+# compare fficiency: x-axis mass, legend pt, fixed ntracks
+def compare_mass_pt_ntracks(ntrack=150):
+    
+
+    eff_arrays=[]
+    err_arrays=[]
+    labels=[]
+    title="$n_{\\mathsf{Track}}$ >"+" {}".format(ntrack)
+    outfile = "plots/effs/compare_mass_pt_ntracks{}.pdf".format( ntrack )
+    
+    for pt in pts:
+        eff_array,err_array = get_eff_array(masses,[ntrack],[pt])
+        eff_arrays.append(eff_array)
+        err_arrays.append(err_array)
+        labels.append("$p_{\\mathsf{T}}$"+" > {} GeV".format(pt))
+
+    compare_effs(eff_arrays,err_arrays,labels,title,outfile)
+    return 
 
 compare_mass_ntracks_pt(0.5)
 compare_mass_ntracks_pt(1)
 compare_mass_ntracks_pt(2)
+
+compare_mass_pt_ntracks(100)
+compare_mass_pt_ntracks(150)
+compare_mass_pt_ntracks(200)
