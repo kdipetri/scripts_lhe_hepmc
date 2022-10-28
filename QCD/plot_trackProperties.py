@@ -10,78 +10,33 @@ from matplotlib.ticker import MultipleLocator
 
 from util.plot_helper import *
 
-f = open('output/qcd.json') 
-data = json.load(f)
+# makes plots w/o pileup
 
-def get_track_array(dist):
-    dist_array   = [ track[dist]     for track in data["tracks"] ]
-    weight_array = [ track["weight"] for track in data["tracks"] ]
-    #dist_array = np.array(dist_array)
-    #weight_array = np.array(weight_array)
-    #print(dist_array.shape, weight_array.shape)
+def get_track_array(sample,dist):
+
+    f = open('output/{}.json'.format(sample)) 
+    data = json.load(f)
+
+    dist_array   = []
+    weight_array = []
+    for i,evt in enumerate(data["event_tracks"]):
+        for track in evt: 
+    
+            dist_array.append( track[dist] )
+            weight_array.append( data["weights"][i] )
+        
     f.close()
     return dist_array, weight_array
 
-def get_event_array(dist,pileup=0):
+def get_event_array(sample,dist):
+
+    f = open('output/{}.json'.format(sample)) 
+    data = json.load(f)
+    
     dist_array   = [ event[dist]     for event in data["events"] ]
     weight_array = [ event["weight"] for event in data["events"] ]
     f.close()
     
-    if pileup<2:
-        return dist_array, weight_array
-    else : 
-        # convert weights to rough probabilities
-        # inv_weights = [ 1.0/x for x in weight_array ] 
-        sumweights = sum(weight_array)
-        prob_array = [ x/sumweights for x in weight_array ]
-        #print("inverse weights")
-        #for i in range(0,10):
-        #    print(weight_array[i], prob_array[i])
-
-        # add ntracks from pile-up events
-        pileup_array = dist_array 
-        size = len(dist_array)
-        for x in range(1,pileup):
-            new_array = np.random.choice(dist_array,size,p=prob_array) 
-            #print('pu evt', x, new_array[0:10])
-            pileup_array = [ sum(evt) for evt in zip(pileup_array,new_array) ]  
-        
-        #print("pileup events, ",dist)
-        #for i in range(10000,10010):
-        #    print(dist_array[i], new_array[i], pileup_array[i]) 
-
-        # plot weights to double check
-        plt.figure(figsize=(6,5.5))
-        plt.hist(prob_array, histtype='step')
-        size=20 
-        plt.xlabel('weight',fontsize=size, labelpad=size/2)
-        plt.ylabel('events',fontsize=size, labelpad=size/2)
-        plt.xticks(fontsize=size-4)
-        plt.yticks(fontsize=size-4)
-        plt.subplots_adjust(left=0.18, right=0.95, top=0.9, bottom=0.18)
-        plt.grid(visible=True, which='major', axis='both', color='gainsboro')
-        plt.yscale('log')
-        plt.savefig('plots/normalizedweights.pdf')
-        plt.clf()
-        plt.close()
-
-        # plot pileup-event array to double check
-        plt.figure(figsize=(6,5.5))
-        plt.hist(new_array, histtype='step')
-        size=20 
-        plt.xlabel('ntracks',fontsize=size, labelpad=size/2)
-        plt.ylabel('events' ,fontsize=size, labelpad=size/2)
-        plt.xticks(fontsize=size-4)
-        plt.yticks(fontsize=size-4)
-        plt.subplots_adjust(left=0.18, right=0.95, top=0.9, bottom=0.18)
-        plt.grid(visible=True, which='major', axis='both', color='gainsboro')
-        plt.yscale('log')
-        plt.savefig('plots/new_array_{}.pdf'.format(dist))
-        plt.clf()
-        plt.close()
-
-        return pileup_array, weight_array
-
 def compare1D(arrays,labels,weights,outfile,norm=0):
     if "withbkg" in outfile : norm=1
     bins = get_bins(outfile)
@@ -97,10 +52,6 @@ def compare1D(arrays,labels,weights,outfile,norm=0):
         else : 
             plt.hist(bins[:-1], bins, histtype='step', label=labels[i], weights=hist_weights)
 
-    if "hit_t" in outfile:
-        ax = plt.axes()
-        ax.xaxis.set_major_locator(plt.MaxNLocator(5))
-        ax.yaxis.set_major_locator(plt.MaxNLocator(5))
 
     plt.subplots_adjust(left=0.18, right=0.95, top=0.9, bottom=0.18)
     plt.grid(visible=True, which='major', axis='both', color='gainsboro')

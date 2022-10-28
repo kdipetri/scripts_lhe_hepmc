@@ -121,6 +121,7 @@ def analyzePUevents(pileup=2,sample='qcd'):
         if i%1000==0 : print("event number ",i)  
 
         #evt_dvs = {} 
+        z0 = event_array[i]["z0"]
     
         # Different displaced configs
         for config in prompt_configs:
@@ -134,7 +135,7 @@ def analyzePUevents(pileup=2,sample='qcd'):
             sum_trk_pt = 0
             for j,trk in enumerate(trks):
 
-                if passPrompt(trk, cutOpt=config) == 0 : continue
+                if passPrompt(trk, z0, cutOpt=config) == 0 : continue
 
                 #print(trk["pt"], trk["eta"], trk["phi"], trk["d0"])
 
@@ -219,7 +220,7 @@ def analyzePUevents(pileup=2,sample='qcd'):
     }
     
 
-    if sample == "qcd" : sample = "hscp_qcd"
+    if "qcd" in sample: sample += "_hscp"
     with open('output/analyzed_{}_pileup{}.json'.format(sample,pileup), 'w') as fp:
         json.dump(outdata, fp)
 
@@ -228,13 +229,10 @@ def analyzePUevents(pileup=2,sample='qcd'):
 
 
 
-#samples = ["higgsportal_125_55_1ns","higgsportal_125_40_0p1ns","qcd","stau_300_1ns","stau_300_0p1ns" ]
-#samples = ["higgsportal_125_55_1ns" ]
-#samples = ["higgsportal_125_40_0p1ns","qcd"]
 samples = []
-samples.append("qcd") 
-samples.append("stau_300_stable") 
-samples.append("stau_100_stable") 
+samples.append("qcd_2TeV") 
+#samples.append("stau_300_stable") 
+#samples.append("stau_100_stable") 
 pileups = [200]
 
 for pileup in pileups:

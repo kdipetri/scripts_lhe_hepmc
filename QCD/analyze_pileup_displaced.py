@@ -254,11 +254,12 @@ def resolveDVambiguity(dvs,tracks):
             # if fit is acceptable 
             if d < 1.5:  
                 # then do additional consistency checks
-                hit_consistency = abs(trk["prod_rxy"] - dv["rxy"]) 
+                hit1_consistency = abs(trk["prod_rxy"] - dv["rxy"]) 
+                hit2_consistency = abs(trk["prod_z"] - dv["z"]) 
                 z_consistency   = randomXCheck(i,dv,tracks)
                 # now test
                 #print("made it here", hit_consistency, z_consistency)
-                if hit_consistency < 40. and z_consistency < 1.5 :  
+                if hit1_consistency < 40. and hit2_consistency < 50. and z_consistency < 1.5 :  
                     if best_dv == -1 or dvs[best_dv]["ntracks"] < dv["ntracks"]: 
                         min_dist = d 
                         best_dv = j
@@ -331,6 +332,8 @@ def constructDVs(tracks,sample='qcd'):
                 # mimic hit consistency
                 if abs(tracks[i]["prod_rxy"] - dv["rxy"]) > 40.: continue
                 if abs(tracks[j]["prod_rxy"] - dv["rxy"]) > 40.: continue
+                if abs(tracks[i]["prod_z"] - dv["z"]) > 50.: continue
+                if abs(tracks[j]["prod_z"] - dv["z"]) > 50.: continue
 
                 dv_2tracks.append(dv)
                 #print("i,x,y,z : ",i, dv["x"], dv["y"], dv["z"])
@@ -603,11 +606,11 @@ def analyzePUevents(pileup=2,sample='qcd'):
 
 
 samples = []
-samples.append("higgsportal_125_40_0p1ns")
-samples.append("higgsportal_125_55_1ns")
-samples.append("qcd")
-samples.append("stau_300_1ns")
-samples.append("stau_300_0p1ns") 
+samples.append("qcd_2TeV")
+#samples.append("higgsportal_125_40_0p1ns")
+#samples.append("higgsportal_125_55_1ns")
+#samples.append("stau_300_1ns")
+#samples.append("stau_300_0p1ns") 
 
 for sample in samples:
     analyzePUevents(200,sample)

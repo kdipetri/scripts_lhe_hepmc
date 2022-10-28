@@ -126,8 +126,10 @@ with hep.open(infile) as f:
     z0 = random.gauss(0.0,50.0) # 50 mm spread in z 
     event["z0"] = z0
 
-    sumpt  = "sumpt2_pass_prompt_pt1.0"
-    event[sumpt] = 0
+    sumpt   = "sumpt_pass_prompt_pt1.0"
+    sumpt2  = "sumpt2_pass_prompt_pt1.0"
+    event[sumpt]  = 0
+    event[sumpt2] = 0
     for prompt_config in prompt_configs: 
          ntrack = "nTrack_pass_prompt_"+prompt_config
          event[ntrack] = 0 # ensure key exists  
@@ -246,7 +248,8 @@ with hep.open(infile) as f:
                 ntrack = "nTrack_"+pass_sel
                 event[ntrack] += 1   
                 if "pt1.0" in prompt_config: 
-                    event[sumpt] += 1*(track["pt"]**2)
+                    event[sumpt]  += 1*(track["pt"])
+                    event[sumpt2] += 1*(track["pt"]**2)
                     trk_v.SetPtEtaPhiM( track["pt"],  track["eta"],  track["phi"], 0.103)
                     met_v += trk_v 
 
@@ -264,7 +267,8 @@ with hep.open(infile) as f:
        evt_tracks.append(track)
 
     # update PV info with met sum
-    event[sumpt] += met_v.Pt()**2 
+    event[sumpt]  += met_v.Pt() 
+    event[sumpt2] += met_v.Pt()**2 
     
     if doTest : print( "PV ntracks, sumpt2 : ", event["nTrack_pass_prompt_pt1.0"], event["sumpt2_pass_prompt_pt1.0"]) 
     events.append(event)

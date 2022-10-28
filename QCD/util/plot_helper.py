@@ -67,6 +67,9 @@ def xtitle(dist):
         if "highBeta" in dist: return "isolated $n_{\\mathsf{Track}}$ ($\\beta_{\\mathsf{TOF}}<0.98$)"
         elif "highM"  in dist: return "isolated $n_{\\mathsf{Track}}$ ($m_{\\mathsf{TOF}}>10$ GeV)"
         else                 : return "isolated $n_{\\mathsf{Track}}$"
+    if "ndvs3" in dist : return "$n_{\\mathsf{DVs}}$ ($\\geq3$ Tracks)"
+    if "ndvs4" in dist : return "$n_{\\mathsf{DVs}}$ ($\\geq4$ Tracks)"
+    if "DV" in dist and "ntrack" in dist: return "DV $n_{\\mathsf{Track}}$"
     elif "pt" in dist: return "$p_{\\mathsf{T}}$ (Gev)" 
     return "" 
 

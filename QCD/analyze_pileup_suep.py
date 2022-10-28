@@ -81,7 +81,7 @@ def compare1D(arrays,labels,weights,outfile,norm=0):
 def analyzePUevents(pileup=2,sample='qcd'):
 
     # Get events with correct pileup
-    f = open('output/{}_pileup{}_nTrackPV.json'.format(sample,pileup)) 
+    f = open('output/{}_pileup{}_nTrack.json'.format(sample,pileup)) 
     data = json.load(f)
     event_tracks = data['event_tracks']
     weight_array = data['weights']
@@ -154,9 +154,10 @@ def analyzePUevents(pileup=2,sample='qcd'):
 
 
 samples = []
+#samples.append("qcd") 
+samples.append("qcd_2TeV") 
 samples.append("suep_mMed-600_mDark-1.0_temp-1.0") 
 samples.append("suep_mMed-200_mDark-1.0_temp-1.0") 
-samples.append("qcd") 
 pileups = [200]
 
 for pileup in pileups:

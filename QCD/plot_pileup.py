@@ -2,6 +2,8 @@ import json
 import time
 import numpy as np
 import ROOT
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #https://www.quora.com/What-is-matplotlib-use-and-why-do-we-use-them
 import matplotlib 
@@ -10,11 +12,15 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from util.plot_helper import *
 
+matplotlib.rcParams['hatch.linewidth'] = 0.1
+matplotlib.rcParams['hatch.color'] = "tab:gray"
+
+
 # Displaced Vertex Samples
 samples = []
-samples.append("hscp_qcd")
-samples.append("qcd_nTrack")
-samples.append("qcd")
+samples.append("qcd_2TeV_hscp")
+samples.append("qcd_2TeV_nTrack")
+samples.append("qcd_2TeV")
 samples.append("suep_mMed-200_mDark-1.0_temp-1.0_nTrack")
 samples.append("suep_mMed-600_mDark-1.0_temp-1.0_nTrack")
 samples.append("higgsportal_125_40_0p1ns")
@@ -25,19 +31,19 @@ samples.append("stau_300_0p1ns")
 samples.append("stau_300_1ns")
 
 # Displaced Vertex Samples
-samples_dv = ["qcd","higgsportal_125_40_0p1ns","higgsportal_125_55_1ns"]
+samples_dv = ["qcd_2TeV","higgsportal_125_40_0p1ns","higgsportal_125_55_1ns"]
 samples_dv_labels = ["QCD", "$m_{S}=40$ GeV, $\\tau_{S}=0.1$ ns", "$m_{S}=55$ GeV, $\\tau_{S}=1$ ns" ]
 
 # Displaced Track Samples
-samples_trk = ["qcd","stau_300_0p1ns","stau_300_1ns" ]
+samples_trk = ["qcd_2TeV","stau_300_0p1ns","stau_300_1ns" ]
 samples_trk_labels = ["QCD", "$m_{\\tilde{\\tau}}=300$ GeV, $\\tau_{\\tilde{\\tau}}=0.1$ ns", "$m_{\\tilde{\\tau}}=300$ GeV, $\\tau_{\\tilde{\\tau}}=1$ ns" ]
 
 # SUEP Samples
-samples_suep = ["qcd_nTrack","suep_mMed-200_mDark-1.0_temp-1.0_nTrack","suep_mMed-600_mDark-1.0_temp-1.0_nTrack" ]
+samples_suep = ["qcd_2TeV_nTrack","suep_mMed-200_mDark-1.0_temp-1.0_nTrack","suep_mMed-600_mDark-1.0_temp-1.0_nTrack" ]
 samples_suep_labels = ["QCD", "$m_{S}=200$ GeV", "$m_{S}=600$ GeV" ]
 
 # HSCP Samples
-samples_HSCP = ["hscp_qcd","stau_100_stable","stau_300_stable" ]
+samples_HSCP = ["qcd_2TeV_hscp","stau_100_stable","stau_300_stable" ]
 samples_HSCP_labels = ["QCD", "$m_{\\tilde{\\tau}}=100$ GeV, stable","$m_{\\tilde{\\tau}}=300$ GeV, stable" ]
 
 # Prompt track selections
@@ -106,43 +112,32 @@ def jetArray(sample,pileup=0,dist="nDVs_3trks_pt1.0;d050"):
     
     return dist_array,weight_array
     
-def dvArray(sample,pileup=0,dist="nDVs_3trks_pt1.0;d050"):
-
-    data = input_data[sample+"_"+str(pileup)]
-    weight_array = [] 
-    dist_array = []
-
-    ndvs3_array = []
-    ndvs4_array = []
-    ndv_weight_array = [] 
-    for i,evt in enumerate(data["event_dvs"]):
-        ndvs3 = 0
-        ndvs4 = 0
-        #print(i,evt)
-        for dv in evt: 
-            #print(dv)
-            if dv["mass"] < 3: continue
-            if dv["rxy"] < 4 : continue
-            if dv["rxy"] > 300 : continue
-            if abs(dv["z"]) > 300 : continue
-            if dv["sumpt"] < 6 : continue
-            #if dv["sumpt2"] < 8 : continue
-
-            if dv["ntracks"] >= 3 : ndvs3+=1
-            if dv["ntracks"] >= 4 : ndvs4+=1
-
-            if "ndvs" not in dist: 
-                if dv["ntracks"] <= 2 : continue 
-                dist_array   .append( dv[dist] ) 
-                weight_array .append( data["weights"][i] ) 
-
-        ndvs3_array.append(ndvs3)
-        ndvs4_array.append(ndvs4)
-
-    if "ndvs3" in dist: return ndvs3_array, data["weights"]
-    if "ndvs4" in dist: return ndvs4_array, data["weights"]
+def histErrors( values, weights, bin_edges ):
     
-    return dist_array,weight_array
+    errors = []
+    bin_centers = []
+    for bin_index in range(len(bin_edges)-1):
+
+        # find which data points are inside the bin
+        bin_left = bin_edges[bin_index]
+        bin_right = bin_edges[bin_index + 1]
+        in_bin = np.logical_and(bin_left < values, values <= bin_right)        
+        
+        # filter the weights to only those inside the bin
+        weights_in_bin = np.array(weights)[in_bin]
+        
+        # compute the error however you want
+        error = np.sqrt(np.sum(weights_in_bin ** 2))
+        errors.append(error)
+    
+        # save the center of the bins to plot the errorbar in the right place
+        bin_center = (bin_right + bin_left) / 2
+        bin_centers.append(bin_center)
+
+    errors = np.array(errors)
+    bin_centers = np.array(bin_centers)
+        
+    return errors,bin_centers
 
 def compare1D(arrays,labels,weights,outfile,title,norm=1):
     plt.style.use('seaborn-v0_8-colorblind')
@@ -161,8 +156,8 @@ def compare1D(arrays,labels,weights,outfile,title,norm=1):
     elif xmax <= 150: bins = np.linspace(-0.5,xmax+1.5,xmax+3)
     else : bins = np.linspace(0,xmax,50) 
 
-    if "eta" in outfile  : bins = np.linspace(-2.5,2.5,20)
-    if "frac" in outfile : bins = np.linspace(0,1,20)
+    #if "eta" in outfile  : bins = np.linspace(-2.5,2.5,20)
+    #if "frac" in outfile : bins = np.linspace(0,1,20)
     
     if "DVProp" in outfile: 
         if "sumpt" in outfile  :  bins = np.linspace(0,20,20)
@@ -174,8 +169,15 @@ def compare1D(arrays,labels,weights,outfile,title,norm=1):
         (counts, bins) = np.histogram(arrays[i], bins=bins, weights=weights[i])
         factor = sum(weights[i])
         hist_weights = counts/float(factor) if  norm==1 else counts
+
+        errors, bin_centers = histErrors(arrays[i],weights[i], bins)
+        hist_errors = errors/float(factor) if  norm==1 else errors
+        
         if norm==1 and "QCD" in labels[i]: 
             plt.hist(bins[:-1], bins, histtype='stepfilled', color="tab:gray", alpha=0.7, label=labels[i], weights=hist_weights)
+            plt.fill_between(bins[1:], hist_weights-hist_errors, hist_weights+hist_errors, step='pre',  hatch='////////', linewidth='0', fc='none')
+
+            #plt.errorbar(bin_centers, hist_weights, yerr=hist_errors, color="tab:gray", alpha=0.5, linestyle="none", fillstyle='full', drawstyle="steps")
         else : 
             plt.hist(bins[:-1], bins, histtype='step', label=labels[i], weights=hist_weights)
 
@@ -192,7 +194,7 @@ def compare1D(arrays,labels,weights,outfile,title,norm=1):
    
     size=20 
     plt.xlabel(xtitle(outfile),fontsize=size, labelpad=size/2)
-    plt.ylabel(ytitle(outfile) + " AU",fontsize=size, labelpad=size/2)
+    plt.ylabel(ytitle(outfile) + " (AU)",fontsize=size, labelpad=size/2)
     plt.xticks(fontsize=size-4)
     plt.yticks(fontsize=size-4)
     plt.title(title,fontsize=size-4)
@@ -234,22 +236,6 @@ dists.append("fracDisplaced")
 #for dist in dists:
 #    compareSampleJets(dist)
 
-
-def compareSampleDVs(dist="nDVs_3trks_pt1.0;d050",pileup=200):
-    
-    print("DV ", dist)
-    dist_arrays = []
-    weight_arrays = []
-    labels = samples_dv_labels 
-    for sample in samples_dv:
-        dist_array,weight_array = dvArray(sample, pileup, dist)
-        dist_arrays.append(dist_array)
-        weight_arrays.append(weight_array)
-        
-    outfile = "plots/pileup/compareDVProperties_pileup{}_{}.pdf".format(pileup,dist)
-    title = configString(dist)
-    compare1D(dist_arrays,labels,weight_arrays,outfile,title)
-    return 
 
 
 def compareSamplePerDist(pileup=200,dist="nDVs_3trks_pt1.0;d050"):
@@ -306,56 +292,42 @@ def compareSamplePerDist(pileup=200,dist="nDVs_3trks_pt1.0;d050"):
     return 
 
 
-# DV Dependent Dists
-dists = []
-dists.append("mass")
-dists.append("sumpt") 
-dists.append("sumpt2")
-dists.append("ntracks") 
-dists.append("tracks_pt")  
-dists.append("rxy") 
-dists.append("ndvs3") 
-dists.append("ndvs4") 
-
-for dist in dists:
-    compareSampleDVs(dist)
-
 
 # Premade distributions
-#pu=200
-#dists = []
-#dists.append("nDVs_2trks")
-#dists.append("nDVs_3trks")
-#dists.append("nDVs_4trks")
-#dists.append("nDVs_5trks")
+pu=200
+dists = []
+dists.append("nDVs_2trks")
+dists.append("nDVs_3trks")
+dists.append("nDVs_4trks")
+dists.append("nDVs_5trks")
 
-#for cfg in displaced_configs:
-#    compareSamplePerDist(pu,"nTrack_pass_displaced_"+cfg)
-#    compareSamplePerDist(pu,"displacedTrack_ptsum_"+cfg)
-#    compareSamplePerDist(pu,"displacedTrack_ptsum2_"+cfg)
-#    for dist in dists:
-#        compareSamplePerDist(pu,dist+"_"+cfg)
-#
-#
-## SUEP
-#for cfg in prompt_configs:
-#    compareSamplePerDist(pu,"nTrack_pass_prompt_"+cfg)
-#    compareSamplePerDist(pu,"prompt_nJets_"+cfg)   
-#    compareSamplePerDist(pu,"prompt_jetht_" +cfg)  
-#    compareSamplePerDist(pu,"prompt_sumtrkpt_" +cfg)  
-#compareSamplePerDist(pu,"nTrack_pass_prompt_pt0.5")
-#
-## HSCP
-#for cfg in prompt_configs:
-#    compareSamplePerDist(pu,"nHSCP_10_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_25_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_50_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_100_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_highBeta_10_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_highBeta_25_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_highBeta_50_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_highBeta_100_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_highM_10_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_highM_25_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_highM_50_"+cfg)
-#    compareSamplePerDist(pu,"nHSCP_highM_100_"+cfg)
+for cfg in displaced_configs:
+    compareSamplePerDist(pu,"nTrack_pass_displaced_"+cfg)
+    compareSamplePerDist(pu,"displacedTrack_ptsum_"+cfg)
+    compareSamplePerDist(pu,"displacedTrack_ptsum2_"+cfg)
+    for dist in dists:
+        compareSamplePerDist(pu,dist+"_"+cfg)
+
+
+# SUEP
+for cfg in prompt_configs:
+    compareSamplePerDist(pu,"nTrack_pass_prompt_"+cfg)
+    compareSamplePerDist(pu,"prompt_nJets_"+cfg)   
+    compareSamplePerDist(pu,"prompt_jetht_" +cfg)  
+    compareSamplePerDist(pu,"prompt_sumtrkpt_" +cfg)  
+compareSamplePerDist(pu,"nTrack_pass_prompt_pt0.5")
+
+# HSCP
+for cfg in prompt_configs:
+    compareSamplePerDist(pu,"nHSCP_10_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_25_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_50_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_100_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_highBeta_10_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_highBeta_25_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_highBeta_50_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_highBeta_100_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_highM_10_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_highM_25_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_highM_50_"+cfg)
+    compareSamplePerDist(pu,"nHSCP_highM_100_"+cfg)
